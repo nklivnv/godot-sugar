@@ -1,40 +1,53 @@
 @abstract class_name InputHelper extends Object
 
 
+
+
 static var _press_times_ms: Dictionary[StringName, int] = {}
-#static var _sequence_count: Dictionary[StringName, int] = {}
 
 
-static func _check_release_time(action: StringName, threshold_ms: int, check_less_than: bool) -> bool:
+
+static func is_action_just_released_earlier(action: StringName, threshold: float = 0.2) -> bool:
+	return _check_release_timing(action, int(threshold * 1000), true)
+
+static func is_action_just_released_later(action: StringName, threshold: float = 0.2) -> bool:
+	return _check_release_timing(action, int(threshold * 1000), false)
+
+
+static func _check_release_timing(action: StringName, threshold_ms: int, check_less_than: bool) -> bool:
 	if Input.is_action_just_pressed(action): _press_times_ms[action] = Time.get_ticks_msec()
 	if not Input.is_action_just_released(action): return false
 	
 	var press_time_ms: int = _press_times_ms.get(action, -1)
-	if press_time_ms == -1:
-		return false
-	#_press_times_ms.erase(action) # Maybe?
+	if press_time_ms == -1: return false
+	
+	_press_times_ms.erase(action) # Maybe?
+	
 	var held_ms: int = Time.get_ticks_msec() - press_time_ms
 	return (held_ms < threshold_ms) if check_less_than else (held_ms >= threshold_ms)
 
 
-static func is_action_released_earlier(action: StringName, threshold: float = 0.2) -> bool:
-	return _check_release_time(action, int(threshold * 1000.0), true)
 
 
-static func is_action_released_later(action: StringName, threshold: float = 0.2) -> bool:
-	return _check_release_time(action, int(threshold * 1000.0), false)
-
+const NOT_PRESSED: int = -1
+const TRIGGERED: int = -2
 
 static func is_action_long_pressed(action: StringName, threshold: float = 0.25) -> bool:
-	if Input.is_action_just_pressed(action): _press_times_ms[action] = Time.get_ticks_msec()
-	elif Input.is_action_just_released(action): _press_times_ms[action] = -1
+	if Input.is_action_just_pressed(action): 
+		_press_times_ms[action] = Time.get_ticks_msec()
+	elif Input.is_action_just_released(action): 
+		_press_times_ms[action] = NOT_PRESSED
 	
-	var press_time_ms: int = _press_times_ms.get(action, -1)
+	var press_time_ms: int = _press_times_ms.get(action, NOT_PRESSED)
+	
 	if Input.is_action_pressed(action) and press_time_ms > 0:
 		if Time.get_ticks_msec() - press_time_ms > threshold * 1000.0:
-			_press_times_ms[action] = -1
+			_press_times_ms[action] = TRIGGERED
 			return true
+	
 	return false
+
+
 
 
 #static func is_action_multiple_pressed(action: StringName, count: int = 2, timeout: float = 0.5) -> bool

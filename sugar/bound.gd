@@ -37,7 +37,7 @@ static func getter(key: Variant) -> Callable: return func(owner: Variant) -> Var
 static func safe_getter(key: Variant) -> Callable: return func(owner: Variant) -> Variant: return owner.get(key) if owner else null
 
 static func setter(key: Variant, value: Variant) -> Callable: return func(owner: Variant) -> void: owner.set(key, value)
-static func safe_setter(key: Variant, value: Variant) -> Callable: return func(owner: Variant) -> void: owner.set(key, value)
+static func safe_setter(key: Variant, value: Variant) -> Callable: return func(owner: Variant) -> void: if owner: owner.set(key, value)
 
 
 static func is_key_equal(key: Variant, value: Variant) -> Callable: return Operator.is_key_equal.bind(key, value)
@@ -53,6 +53,7 @@ static func inside(where: Variant) -> Callable: return Operator.inside.bind(wher
 static func not_inside(where: Variant) -> Callable: return Operator.not_inside.bind(where)
 static func has(what: Variant) -> Callable: return Operator.has.bind(what)
 static func not_has(what: Variant) -> Callable: return Operator.not_has.bind(what)
+
 
 
 ## (f1, f2, f3) => { f1(); f2(); f3() }

@@ -41,6 +41,10 @@ static func has(where: Variant, what: Variant) -> bool: return what in where
 static func not_has(where: Variant, what: Variant) -> bool: return what not in where
 
 
+static func is_inside_object(property: StringName, object: Object) -> bool: return property in object if object else null
+static func is_object_has(object: Object, property: StringName) -> bool: return property in object if object else null
+
+
 static func safe_get(object: Object, property: StringName, default: Variant = null) -> Variant: return object.get(property) if object and property in object else default
 #static func safe_getter(owner: Variant, key: Variant) -> Variant: return owner.get(key) if owner else null
 #static func safe_setter(owner: Variant, value: Variant, key: Variant) -> void: if owner: owner.set(key, value)
@@ -57,19 +61,35 @@ static func is_setted(object: Object, property: StringName, value: Variant) -> b
 static func is_true(value: Variant) -> bool: return value
 static func is_false(value: Variant) -> bool: return not value
  
+
 static func is_equal(a: Variant, b: Variant) -> bool: return a == b
+static func is_equali(a: int, b: int) -> bool: return a == b
+static func is_equalf(a: float, b: float) -> bool: return a == b
+
 static func is_not_equal(a: Variant, b: Variant) -> bool: return a != b
 
 static func is_key_equal(where: Variant, key: Variant, what: Variant) -> bool: return where.get(key) == what
 
+
 static func is_greater(a: Variant, b: Variant) -> bool: return a > b
+static func is_greateri(a: int, b: int) -> bool: return a > b
+static func is_greaterf(a: float, b: float) -> bool: return a > b
+
 static func is_not_greater(a: Variant, b: Variant) -> bool: return a <= b
 
+
 static func is_less(a: Variant, b: Variant) -> bool: return a < b
+static func is_lessi(a: int, b: int) -> bool: return a < b
+static func is_lessf(a: float, b: float) -> bool: return a < b
+
 static func is_not_less(a: Variant, b: Variant) -> bool: return a >= b
 
-static func all(...array: Array) -> bool: return array.all(type_convert.bind(TYPE_BOOL))
-static func any(...array: Array) -> bool: return array.any(type_convert.bind(TYPE_BOOL))
+
+static func all(...array: Array) -> bool: return array.all(is_true)
+static func allv(array: Array) -> bool: return array.all(is_true)
+
+static func any(...array: Array) -> bool: return array.any(is_true)
+static func anyv(array: Array) -> bool: return array.any(is_true)
 
 
 # --- MATH ---
@@ -109,29 +129,3 @@ static func safe_div_3d(a: Vector3, b: Vector3, default := Vector3.ZERO) -> Vect
 	default.x if is_zero_approx(b.x) else a.x / b.x,
 	default.y if is_zero_approx(b.y) else a.y / b.y,
 	default.z if is_zero_approx(b.z) else a.z / b.z)
-
-
-static func sum(...args: Array) -> Variant: return sumv(args)
-static func sumi(...args: Array) -> int: return sumvi(args)
-static func sumf(...args: Array) -> float: return sumvf(args)
-static func sum_2d(...args: Array) -> Vector2: return sumv_2d(args)
-static func sum_3d(...args: Array) -> Vector3: return sumv_3d(args)
-
-static func sumv(args: Array) -> Variant: return args.slice(1).reduce(add, args[0])
-static func sumvi(args: Array[int]) -> int: return args.reduce(addi, 0)
-static func sumvf(args: Array[float]) -> float: return args.reduce(addf, 0.0)
-static func sumv_2d(args: Array[Vector2]) -> Vector2: return args.reduce(add_2d, Vector2.ZERO)
-static func sumv_3d(args: Array[Vector3]) -> Vector3: return args.reduce(add_3d, Vector3.ZERO)
-
-
-static func prod(...args: Array) -> Variant: return prodv(args)
-static func prodi(...args: Array) -> int: return prodvi(args)
-static func prodf(...args: Array) -> float: return prodvf(args)
-static func prod_2d(...args: Array) -> Vector2: return prodv_2d(args)
-static func prod_3d(...args: Array) -> Vector3: return prodv_3d(args)
-
-static func prodv(args: Array) -> Variant: return args.slice(1).reduce(mul, args[0])
-static func prodvi(args: Array[int]) -> int: return args.reduce(muli, 0)
-static func prodvf(args: Array[float]) -> float: return args.reduce(mulf, 0.0)
-static func prodv_2d(args: Array[Vector2]) -> Vector2: return args.reduce(mul_2d, Vector2.ZERO)
-static func prodv_3d(args: Array[Vector3]) -> Vector3: return args.reduce(mul_3d, Vector3.ZERO)

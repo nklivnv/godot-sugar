@@ -3,41 +3,33 @@
 
 # --- Object: ---
 
-
 static func object_connect(object: Object, signal_name: StringName, callback: Callable, flags: ConnectFlags = 0) -> void:
 	if object and object.has_signal(signal_name) and not object.is_connected(signal_name, callback):
 		object.connect(signal_name, callback, flags)
-
 
 static func object_disconnect(object: Object, signal_name: StringName, callback: Callable) -> void:
 	if object and object.has_signal(signal_name) and  object.is_connected(signal_name, callback):
 		object.disconnect(signal_name, callback)
 
-
 static func object_reconnect(object: Object, signal_name: StringName, callback: Callable, flags: ConnectFlags = 0) -> void:
 	object_swap(object, object, signal_name, callback)
-
-
-static func object_set_enabled(object: Object, signal_name: StringName, callback: Callable, active: bool, flags: ConnectFlags = 0) -> void:
-	if active: object_connect(object, signal_name, callback, flags)
-	else: object_disconnect(object, signal_name, callback)
-
 
 static func object_swap(old: Object, new: Object, signal_name: StringName, callback: Callable, flags: ConnectFlags = 0) -> void:
 	object_disconnect(old, signal_name, callback)
 	object_connect(new, signal_name, callback, flags)
 
+static func object_update(object: Object, signal_name: StringName, callback: Callable, active: bool, flags: ConnectFlags = 0) -> void:
+	if active: object_reconnect(object, signal_name, callback, flags)
+	else: object_disconnect(object, signal_name, callback)
+
 
 # --- Object Arrays: ---
-
 
 static func objects_connect(objects: Array, signal_name: StringName, callback: Callable, flags: ConnectFlags = 0) -> void:
 	for object: Object in objects: object_connect(object, signal_name, callback, flags)
 
-
 static func objects_disconnect(objects: Array, signal_name: StringName, callback: Callable) -> void:
 	for object: Object in objects: object_disconnect(object, signal_name, callback)
-
 
 static func objects_swap(old_objects: Array, new_objects: Array, signal_name: StringName, callback: Callable, flags: ConnectFlags = 0) -> void:
 	objects_disconnect(old_objects, signal_name, callback)
@@ -46,36 +38,37 @@ static func objects_swap(old_objects: Array, new_objects: Array, signal_name: St
 
 # --- Signal: ---
 
-
 static func signal_connect(signal_: Signal, callback: Callable, flags: ConnectFlags = 0) -> void:
-	if not signal_.is_null() and not signal_.is_connected(callback): signal_.connect(callback, flags)
-
+	if not signal_.is_connected(callback): signal_.connect(callback, flags)
 
 static func signal_disconnect(signal_: Signal, callback: Callable) -> void:
-	if not signal_.is_null() and signal_.is_connected(callback): signal_.disconnect(callback)
-
+	if signal_.is_connected(callback): signal_.disconnect(callback)
 
 static func signal_reconnect(signal_: Signal, callback: Callable, flags: ConnectFlags = 0) -> void:
 	signal_swap(signal_, signal_, callback, flags)
-
-
-static func signal_set_enabled(signal_: Signal, callback: Callable, active: bool, flags: ConnectFlags = 0) -> void:
-	if active: signal_connect(signal_, callback, flags)
-	else: signal_disconnect(signal_, callback)
-
 
 static func signal_swap(old: Signal, new: Signal, callback: Callable, flags: ConnectFlags = 0) -> void:
 	signal_disconnect(old, callback)
 	signal_connect(new, callback, flags)
 
+static func signal_update(signal_: Signal, callback: Callable, active: bool, flags: ConnectFlags = 0) -> void:
+	if active: signal_reconnect(signal_, callback, flags)
+	else: signal_disconnect(signal_, callback)
 
-static func signal_custom(signal_a: Signal, signal_b: Signal, a_callback: Callable, b_callback: Callable, active_b: bool = true, a_flags: ConnectFlags = 0, b_flags: ConnectFlags = 0) -> void:
-	if active_b:
-		signal_disconnect(signal_a, a_callback)
-		signal_connect(signal_b, b_callback, a_flags)
-	else:
-		signal_disconnect(signal_b, b_callback)
-		signal_connect(signal_a, a_callback, b_flags)
+
+
+#static func signal_custom(old_signal: Signal, new_signal: Signal, old_callback: Callable, new_callback: Callable, flags: ConnectFlags = 0) -> void:
+	#signal_disconnect(old_signal, old_callback)
+	#signal_connect(new_signal, new_callback, flags)
+
+
+#static func signal_swap_custom(signal_a: Signal, signal_b: Signal, a_callback: Callable, b_callback: Callable, active_b: bool = true, a_flags: ConnectFlags = 0, b_flags: ConnectFlags = 0) -> void:
+	#if active_b:
+		#signal_disconnect(signal_a, a_callback)
+		#signal_connect(signal_b, b_callback, b_flags)
+	#else:
+		#signal_disconnect(signal_b, b_callback)
+		#signal_connect(signal_a, a_callback, b_flags)
 
 
 # --- Callable: ---
@@ -90,18 +83,18 @@ static func signal_custom(signal_a: Signal, signal_b: Signal, a_callback: Callab
 #static func callback_toggle_signal(callback: Callable, signal_a: Signal, signal_b: Signal, flags: ConnectFlags = 0, active_b: bool = true) -> void:
 	#signal_disconnect(signal_a if active_b else signal_b, callback)
 	#signal_connect(signal_b if active_b else signal_a, callback, flags)
-#
-#
-#static func callback_swap_objects(callback: Callable, old: Object, new: Object, signal_name: StringName, flags: ConnectFlags = 0) -> void:
+
+
+#static func swap_object(callback: Callable, old: Object, new: Object, signal_name: StringName, flags: ConnectFlags = 0) -> void:
 	#object_swap(old, new, signal_name, callback, flags)
 #
 #
-#static func callback_swap_signals(callback: Callable, old: Signal, new: Signal, flags: ConnectFlags = 0) -> void:
-	#swap_signals(old, new, callback, flags)
-#
+#static func swap_signal(callback: Callable, old: Signal, new: Signal, flags: ConnectFlags = 0) -> void:
+	#signal_swap(old, new, callback, flags)
+
+
 
 # --- Until: ---
-
 
 class Connection:
 	

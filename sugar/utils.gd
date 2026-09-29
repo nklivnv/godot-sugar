@@ -3,31 +3,48 @@ extends Object
 class_name Utils
 
 
-
-
-class CacheableCall extends RefCounted:
-	
-	var _callable: Callable
-	var _cache: Dictionary[Array, Variant]
-	
-	func _init(callable: Callable) -> void: _callable = callable
-	
-	func is_cached(...args: Array) -> bool: return is_cachedv(args)
-	func is_cachedv(args: Array) -> bool: return _cache.get(args, false)
-	
-	func call_cached(...args: Array) -> Variant: return call_cachedv(args)
-	func call_cachedv(args: Array) -> Variant: return _cache[args] if is_cachedv(args) else call_recachedv(args)
-	
-	func call_recached(...args: Array) -> Variant: return call_recachedv(args)
-	func call_recachedv(args: Array) -> Variant:
-		_cache[args] = _callable.callv(args)
-		return _cache
-	
-	func clear_cache() -> void: _cache.clear()
-	func clear_cached(...args: Array) -> void: _cache.erase(args)
-
-
 #region Utils #################################################################
+
+static func is_node_in_all_groups(node: Node, groups: Array[StringName]) -> bool: return groups and groups.all(node.is_in_group)
+static func is_node_in_any_group(node: Node, groups: Array[StringName]) -> bool: return groups.any(node.is_in_group)
+static func is_node_not_in_any_group(node: Node, groups: Array[StringName]) -> bool: return not groups.any(node.is_in_group)
+
+
+static func get_nodes_in_groups(tree: SceneTree, pass_all: Array[StringName] = [], pass_any: Array[StringName] = [], exclude: Array[StringName] = []) -> Array[Node]:
+	if not tree or not (pass_all or pass_any): return []
+	var first_group: StringName = pass_all[0] if pass_all else pass_any[0]
+	var candidates: Array[Node] = tree.get_nodes_in_group(first_group)
+	return get_nodes_group_filter(candidates, pass_all, pass_any, exclude)
+
+
+static func get_nodes_group_filter(nodes: Array[Node], pass_all: Array[StringName] = [], pass_any: Array[StringName] = [], exclude: Array[StringName] = []) -> Array[Node]:
+	if not nodes or not (pass_all or pass_any): return []
+	if pass_all: nodes = nodes.filter(is_node_in_all_groups.bind(pass_all))
+	if pass_any: nodes = nodes.filter(is_node_in_any_group.bind(pass_any))
+	if exclude:  nodes = nodes.filter(is_node_not_in_any_group.bind(exclude))
+	return nodes
+
+
+
+static func call_or_connect(callable: Callable, predicate: Callable, p_signal: Signal) -> void:
+	if predicate.call(): callable.call()
+	p_signal.connect(callable, CONNECT_ONE_SHOT)
+
+
+static func is_geometry_instance_on_screen_3d(viewport: Viewport, instance: GeometryInstance3D) -> bool:
+	if not viewport: return false
+	if not instance or not instance.is_visible_in_tree(): return false
+	
+	var camera: Camera3D = viewport.get_camera_3d()
+	if not camera: return false
+	
+	var distance_sq: float = camera.global_position.distance_squared_to(instance.global_position)
+	if instance.visibility_range_begin > 0.0 and distance_sq < instance.visibility_range_begin * instance.visibility_range_begin: return false
+	if instance.visibility_range_end > 0.0 and distance_sq > instance.visibility_range_end * instance.visibility_range_end: return false
+	var global_aabb: AABB = instance.global_transform * instance.get_aabb()
+	
+	return is_aabb_in_convex(camera.get_frustum(), global_aabb)
+
 
 
 static func is_dictionary_valid_access(dictionary: Dictionary, key: Variant, only_exists: bool = false) -> bool: return dictionary is Dictionary and (not only_exists or key in dictionary)
@@ -35,46 +52,33 @@ static func is_object_valid_access(object: Variant, property: Variant) -> bool: 
 static func is_array_valid_access(array: Variant, index: Variant) -> bool: return is_array(array) and index is int and Arrays.is_index_valid(array, index) #and [].is_same_typed([])
 
 
-## Для запуска тяжелых функций внутри _process
-static func is_valid_frame(frame_interval: int = 60, offset: int = 0, frames_drawn: int = Engine.get_process_frames()) -> bool:
-	return false if frame_interval <= 0 else wrapi(frames_drawn + offset, 0, frame_interval) == 0
-
-static func is_process_valid_frame(frame_interval: int = 60, offset: int = 0) -> bool: return is_valid_frame(frame_interval, offset, Engine.get_process_frames())
-static func is_physics_valid_frame(frame_interval: int = 60, offset: int = 0) -> bool: return is_valid_frame(frame_interval, offset, Engine.get_physics_frames())
-
-
-static func is_skip_frame(skip_frames: int = 1, offset: int = 0, frames_drawn: int = Engine.get_process_frames()) -> bool:
-	return false if skip_frames <= 0 else wrapi(frames_drawn + offset, 0, skip_frames + 1) != 0
-
-static func is_process_skip_frame(skip_frames: int = 1, offset: int = 0) -> bool: return is_skip_frame(skip_frames, offset, Engine.get_process_frames())
-static func is_physics_skip_frame(skip_frames: int = 1, offset: int = 0) -> bool: return is_skip_frame(skip_frames, offset, Engine.get_physics_frames())
-
-
 ## Для обновления больших массивов внутри _process с пропусками
 ## Позволяет итерироваться разреженно
-static func process_dithered_range(count: int, skip_step: int = 1, offset: int = 0) -> Array:
-	return range(count) if skip_step <= 0 else range(wrapi(Engine.get_process_frames() + offset, 0, skip_step), count, skip_step)
+## <= 1: [0, 1, 2, 3,...]
+##    2: [0, 2, 4, 6,...]
+##    3: [0, 3, 6, 9,...]
+##    4: [0, 4, 8, 12,...]
+#static func process_dithered_range(count: int, groups: int = 2, offset: int = 0) -> Array:
+#	return range(count) if groups <= 1 else range(wrapi(Engine.get_process_frames() + offset, 0, groups), count, groups)
+
+## <= 0: [0, 1, 2, 3,...]
+##    1: [0, 2, 4, 6,...]
+##    2: [0, 3, 6, 9,...]
+##    3: [0, 4, 8, 12,...]
+static func _dithered_range(count, skips: int = 0, offset: = 0) -> Array:
+	if skips <= 0: return range(count)
+	var step: int = skips + 1 
+	var start_index = wrapi(offset, 0, step)
+	return range(start_index, count, step)
+
+static func process_dithered_range(count: int, skips: int = 0, offset: int = 0) -> Array:
+	return _dithered_range(count, skips, Engine.get_process_frames() + offset)
 
 
 static func clear_children(node: Node, include_internal: bool = false) -> void:
 	for child in node.get_children(include_internal):
 		child.queue_free()
 
-
-#static func skip_frames_while_valid(node: Node, frames: int) -> bool:
-	#for i in frames:
-		#if not is_instance_valid(node): return false
-		#await node.get_tree().process_frame
-	#return true
-
-
-#static func process_target_delta(callback: Callable, delta: float, target_delta: float) -> void:
-	#if target_delta <= 0.0: callback.call(0.0)
-	#else:
-		#var ticks_msec: float = Time.get_ticks_msec() / 1000.0
-		#var real_delta: float = delta / Engine.time_scale 
-		#if int(ticks_msec / target_delta) > int((ticks_msec - real_delta) / target_delta):
-			#callback.call(target_delta)
 
 
 static func grid_map_get_unused_cells(grid_map: GridMap) -> Array[Vector3i]:
@@ -258,41 +262,43 @@ static func transact(
 
 static func get_resource_or_node(parent: Node, path: NodePath) -> Object:
 	if not parent: return null
-	var node_and_resource: Array = parent.get_node_and_resource(path)
-	var node: Node = node_and_resource[0]
-	var resource: Resource = node_and_resource[1]
+	
+	var found: Array = parent.get_node_and_resource(path)
+	
+	var node: Node =         found[0]
+	var resource: Resource = found[1]
+	
 	return resource if resource else node
 
 
 static func object_get_indexed(parent: Node, path: NodePath) -> Variant:
-	var node_and_resource: Array = parent.get_node_and_resource(path)
-	var node: Node = node_and_resource[0]
-	var resource: Resource = node_and_resource[1]
-	var property_path: NodePath = node_and_resource[2]
+	if not parent: return
+	
+	var found: Array = parent.get_node_and_resource(path)
+	
+	var node: Node              = found[0]
+	var resource: Resource      = found[1]
+	var property_path: NodePath = found[2]
+	
 	var object: Object = resource if resource else node
-	return object.get_indexed(property_path) if object and property_path else null
+	return object.get_indexed(property_path) if object and property_path else object
 
 
-static func default(value: Variant, default: Variant = null, not_valid: Variant = null) -> Variant:
-	return default if is_same(value, not_valid) else value
+static func default(value: Variant, default_value: Variant = null, invalid_value: Variant = null) -> Variant:
+	return default_value if is_same(value, invalid_value) else value
 
 
-static func init_with(value: Variant, callable: Callable) -> Variant:
+## (SphereShape3D.new(), Bound.setter("radius", 1_000))
+static func with(value: Variant, callable: Callable) -> Variant:
 	callable.call(value)
 	return value
 
 
-#static func with(value: Variant, ...callables: Array) -> Variant:
-	#for callable: Callable in callables:
-		#callable.call(value)
-	#return value
-
-
-#static func object_setter(old: Object, new: Object, signal_name: StringName, callable: Callable, with_call: bool = true) -> void:
-	#SignalTools.safe_reconnect(old, new, signal_name, callable)
-	#OnceCaller.call_deferred_once(callable)
-	#if with_call: callable.call()
-
+## (Node3D.new(), { position = Vector3.LEFT, rotation = Vector3(PI, 0, 0) })
+static func with_properties(value: Variant, properties: Dictionary[StringName, Variant]) -> Variant:
+	for property in properties:
+		value.set(property, properties[property])
+	return value
 
 
 static func get_viewport_camera_3d(node: Node) -> Camera3D:
@@ -402,6 +408,11 @@ static func is_sequence(what: Variant) -> bool:
 #region Math ###################################################################
 
 
+static func lerp3(a: Variant, b: Variant, c: Variant, weight: float) -> float:
+	var clamped_weight: float = clampf(weight, 0.0, 1.0)
+	return lerp(a, b, clamped_weight * 2.0) if clamped_weight < 0.5 else lerp(b, c, clamped_weight * 2.0 - 1.0)
+
+
 # Arrays.safe_reduce([...], Funcs.zip_3d.bind(minf)) -> вектор минимальных компонент
 # ((0,1,2), (2,1,0), min) => (0,1,0)
 static func zip_3d(a: Vector3, b: Vector3, comparator: Callable) -> Vector3:
@@ -422,6 +433,9 @@ static func vector3_wrapf(value: Vector3, min_value: float, max_value: float) ->
 		wrapf(value.z, min_value, max_value),
 	)
 
+static func cwrapf(value: float, min: float, max: float) -> float: return max if is_equal_approx(value, max) else wrapf(value, min, max)
+
+
 static func roundf_to(value: float, decimals: int = 0) -> float:
 	return snappedf(value, 10.0 ** -decimals)
 
@@ -436,9 +450,9 @@ static func floorf_to(value: float, decimals: int = 0) -> float:
 	return floorf(value * multiplier) / multiplier
 
 
-static func is_closer(target: float, to: float, than: float) -> bool: return absf(target - to) < absf(target - than)
-static func get_closest(value: float, a: float, b: float) -> float: return a if absf(value - a) < absf(value - b) else b
-static func get_furthest(value: float, a: float, b: float) -> float: return a if absf(value - a) > absf(value - b) else b
+static func is_closer(from: float, to: float, than: float) -> bool: return absf(from - to) < absf(from - than)
+static func get_closest(from: float, a: float, b: float) -> float: return a if absf(from - a) < absf(from - b) else b
+static func get_furthest(from: float, a: float, b: float) -> float: return a if absf(from - a) > absf(from - b) else b
 
 static func get_nearest_2d(from: Vector2, a: Vector2, b: Vector2) -> Vector2: return a if from.distance_squared_to(a) < from.distance_squared_to(b) else b
 static func get_nearest_3d(from: Vector3, a: Vector3, b: Vector3) -> Vector3: return a if from.distance_squared_to(a) < from.distance_squared_to(b) else b
@@ -639,18 +653,36 @@ static func do_while(callable: Callable, predicate: Callable, max_repeats: int =
 #endregion Iteration ###########################################################
 #region Geometry ###############################################################
 
+func is_aabb_in_convex_project(aabb: AABB, planes: Array[Plane]) -> bool:
+	for plane in planes:
+		var support := aabb.get_support(plane.normal)
+		if (support - plane.project(support)).dot(plane.normal) > 0.0:
+			return false
+	return true
+
 
 static func is_aabb_in_convex(planes: Array[Plane], aabb: AABB) -> bool:
-	for plane in planes:
-		if plane.normal.dot(aabb.get_support(plane.normal)) + plane.d < 0.0: # if plane.distance_to(aabb.get_support(plane.normal)) < 0.0:
-			return false
+	
+	for plane: Plane in planes:
+		# Slowest:
+		#if plane.is_point_over(global_aabb.get_support(-plane.normal)): return false
+		
+		# Middle:
+		#if plane.normal.dot(aabb.get_support(plane.normal)) + plane.d < 0.0: return false
+		
+		# Faster:
+		#if plane.distance_to(aabb.get_support(plane.normal)) < 0.0: return false
+		
+		# Fastest:
+		var support := aabb.get_support(plane.normal)
+		if (support - plane.project(support)).dot(plane.normal) > 0.0: return false
+		
 	return true
 
 
 static func is_point_in_convex(planes: Array[Plane], point: Vector3) -> bool:
 	for plane in planes:
-		if plane.normal.dot(point) + plane.d < 0.0: # if plane.distance_to(point) < 0.0:
-			return false
+		if plane.distance_to(point) < 0.0: return false
 	return true
 
 

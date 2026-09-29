@@ -161,7 +161,7 @@ static func set_sum_normalized(weights: PackedFloat32Array, index: int, value: f
 		for i in other_indices:
 			weights[i] = each
 	else:
-		var sum_others: float = Operator.sumf(others)
+		var sum_others: float = sumf(others)
 		var factor: float = (p_sum - value) / sum_others
 		for i in other_indices:
 			weights[i] *= factor
@@ -179,13 +179,11 @@ static func sumf(array: Array) -> float: return array.reduce(Operator.addf, 0.0)
 static func sum_2d(array: Array) -> Vector2: return array.reduce(Operator.add_2d, Vector2.ZERO)
 static func sum_3d(array: Array) -> Vector3: return array.reduce(Operator.add_3d, Vector3.ZERO)
 
-
 static func prod(array: Array) -> Variant: return array.slice(1).reduce(Operator.mul, array[0])
 static func prodi(array: Array) -> int: return array.reduce(Operator.muli, 0)
 static func prodf(array: Array) -> float: return array.reduce(Operator.mulf, 0.0)
 static func prod_2d(array: Array) -> Vector2: return array.reduce(Operator.mul_2d, Vector2.ONE)
 static func prod_3d(array: Array) -> Vector3: return array.reduce(Operator.mul_3d, Vector3.ONE)
-
 
 static func avg(array: Array) -> Variant: return sum(array) / len(array)
 static func avgf(array: PackedFloat32Array) -> float: return sumf(array) / len(array)

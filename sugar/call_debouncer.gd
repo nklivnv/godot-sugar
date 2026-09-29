@@ -1,5 +1,5 @@
 extends RefCounted
-class_name CallDebouncer
+class_name CallDebouncer # CallLocker
 
 
 var _callable: Callable

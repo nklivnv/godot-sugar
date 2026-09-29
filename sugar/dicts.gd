@@ -27,13 +27,13 @@ static func filled(keys: Array, value: Variant, type_key := TYPE_NIL, type_value
 
 enum ConflictMode { OLD, NEW, SKIP }
 
-## Merge(overwrite = true)					(a, b, true, true, NEW)
-## Merge(overwrite = false)					(a, b, true, true, OLD)
-## Difference:											(a, b, true, false, SKIP)
-## Intersection:										(a, b, false, false, NEW)
-## XOR:															(a, b, true, true, SKIP)
-## Update_existing:									(a, b, true, false, NEW)
-## Fill_missing:										(a, b, true, true, OLD)
+## Merge(overwrite = true):						(a, b, true, true, NEW)
+## Merge(overwrite = false):					(a, b, true, true, OLD)
+## Difference:												(a, b, true, false, SKIP)
+## Intersection:											(a, b, false, false, NEW)
+## XOR:																(a, b, true, true, SKIP)
+## Update_existing:										(a, b, true, false, NEW)
+## Fill_missing:											(a, b, true, true, OLD)
 
 ## 1.		Merge / Overwrite:						true	true		(ConflictMode.NEW)
 ## 2.		Merge / Keep Old:							true	true		(ConflictMode.OLD)
