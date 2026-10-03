@@ -20,7 +20,7 @@ static func lrbind(callable: Callable, left: Array = [], right: Array = []) -> C
 
 
 ## (f(...) -> bool) => { return not f(...) }
-static func negate(callable: Callable) -> Callable: return func(...args: Array) -> bool: return not callable.callv(args)
+static func negate(predicate: Callable) -> Callable: return func(...args: Array) -> bool: return not predicate.callv(args)
 
 
 ## Erase button from buttons if exiting child is Button:

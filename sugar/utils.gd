@@ -3,32 +3,30 @@ extends Object
 class_name Utils
 
 
+
 #region Utils #################################################################
+
+
 
 static func is_node_in_all_groups(node: Node, groups: Array[StringName]) -> bool: return groups and groups.all(node.is_in_group)
 static func is_node_in_any_group(node: Node, groups: Array[StringName]) -> bool: return groups.any(node.is_in_group)
 static func is_node_not_in_any_group(node: Node, groups: Array[StringName]) -> bool: return not groups.any(node.is_in_group)
 
 
-static func get_nodes_in_groups(tree: SceneTree, pass_all: Array[StringName] = [], pass_any: Array[StringName] = [], exclude: Array[StringName] = []) -> Array[Node]:
+static func find_grouped_nodes(tree: SceneTree, pass_all: Array[StringName] = [], pass_any: Array[StringName] = [], exclude: Array[StringName] = []) -> Array[Node]:
 	if not tree or not (pass_all or pass_any): return []
 	var first_group: StringName = pass_all[0] if pass_all else pass_any[0]
 	var candidates: Array[Node] = tree.get_nodes_in_group(first_group)
-	return get_nodes_group_filter(candidates, pass_all, pass_any, exclude)
+	return get_grouped_nodes(candidates, pass_all, pass_any, exclude)
 
 
-static func get_nodes_group_filter(nodes: Array[Node], pass_all: Array[StringName] = [], pass_any: Array[StringName] = [], exclude: Array[StringName] = []) -> Array[Node]:
+static func get_grouped_nodes(nodes: Array[Node], pass_all: Array[StringName] = [], pass_any: Array[StringName] = [], exclude: Array[StringName] = []) -> Array[Node]:
 	if not nodes or not (pass_all or pass_any): return []
 	if pass_all: nodes = nodes.filter(is_node_in_all_groups.bind(pass_all))
 	if pass_any: nodes = nodes.filter(is_node_in_any_group.bind(pass_any))
 	if exclude:  nodes = nodes.filter(is_node_not_in_any_group.bind(exclude))
 	return nodes
 
-
-
-static func call_or_connect(callable: Callable, predicate: Callable, p_signal: Signal) -> void:
-	if predicate.call(): callable.call()
-	p_signal.connect(callable, CONNECT_ONE_SHOT)
 
 
 static func is_geometry_instance_on_screen_3d(viewport: Viewport, instance: GeometryInstance3D) -> bool:
@@ -61,15 +59,23 @@ static func is_array_valid_access(array: Variant, index: Variant) -> bool: retur
 #static func process_dithered_range(count: int, groups: int = 2, offset: int = 0) -> Array:
 #	return range(count) if groups <= 1 else range(wrapi(Engine.get_process_frames() + offset, 0, groups), count, groups)
 
-## <= 0: [0, 1, 2, 3,...]
-##    1: [0, 2, 4, 6,...]
-##    2: [0, 3, 6, 9,...]
-##    3: [0, 4, 8, 12,...]
+
+
+## TODO:
+## (n, -2, 0) => [0, 1,    3, 4,    6, 8           ???
+## (n, -1, 0) => [0, 1, 2, 3, 4, 5, 6, 7, 8,...]   ???
+
+## REALIZED:
+## (n,<=0, 0) => [0, 1, 2, 3, 4, 5, 6, 7, 8,...]
+## (n,  1, 0) => [0,    2,    4,    6,    8,...]
+## (n,  2, 0) => [0,       3,       6,      ...]
+## (n,  3, 0) => [0,          4,       8,   ...]
 static func _dithered_range(count, skips: int = 0, offset: = 0) -> Array:
 	if skips <= 0: return range(count)
 	var step: int = skips + 1 
 	var start_index = wrapi(offset, 0, step)
 	return range(start_index, count, step)
+
 
 static func process_dithered_range(count: int, skips: int = 0, offset: int = 0) -> Array:
 	return _dithered_range(count, skips, Engine.get_process_frames() + offset)
@@ -146,45 +152,6 @@ static func format_usec(usec: float, decimals: int = 3) -> String:
 	if usec >= 1.0: return String.num(usec, decimals) + " (us)"
 	return String.num(usec * 1000.0, decimals) + " (ns)"
 
-
-static func is_same_typed(value: Variant, ...values: Array) -> bool: return values.map(typeof).all(is_same.bind(typeof(value)))# if values else true
-
-
-static func toggle_property(object: Object, property: StringName, primary: Variant = true, secondary: Variant = false) -> void:
-	object.set(property, toggled(object.get(property), primary, secondary))
-
-
-static func toggle_indexed(object: Object, property: String, primary: Variant = true, secondary: Variant = false) -> void:
-	object.set_indexed(property, toggled(object.get_indexed(property), primary, secondary))
-
-
-static func swap(object: Object, property_a: StringName, property_b: StringName) -> void:
-	if object and property_a in object and property_b in object:
-		var a: Variant = object.get(property_a)
-		var b: Variant = object.get(property_b)
-		object.set(property_a, b)
-		object.set(property_b, a)
-
-
-static func swaps(a: Object, a_property: StringName, b: Object, b_property: StringName) -> void:
-	if a and a_property in a and b and b_property in b:
-		var a_value: Variant = a.get(a_property)
-		var b_value: Variant = b.get(b_property)
-		a.set(a_property, b_value)
-		b.set(b_property, a_value)
-
-
-static func shift_property(object: Object, property: StringName, min_value: Variant, max_value: Variant, offset: Variant = 1, wrapped: bool = true) -> void:
-	if wrapped: shift_property_wrapped(object, property, min_value, max_value, offset)
-	else: shift_property_clamped(object, property, min_value, max_value, offset)
-
-
-static func shift_property_wrapped(object: Object, property: StringName, min_value: Variant, max_value: Variant, offset: Variant = 1) -> void:
-	object.set(property, wrap(object.get(property) + offset, min_value, max_value))
-
-
-static func shift_property_clamped(object: Object, property: StringName, min_value: Variant, max_value: Variant, offset: Variant = 1) -> void:
-	object.set(property, clamp(object.get(property) + offset, min_value, max_value))
 
 
 static func get_class_property_names(type: StringName, no_inheritance: bool = false, usage: PropertyUsageFlags = PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_SCRIPT_VARIABLE) -> PackedStringArray:
@@ -284,21 +251,7 @@ static func object_get_indexed(parent: Node, path: NodePath) -> Variant:
 	return object.get_indexed(property_path) if object and property_path else object
 
 
-static func default(value: Variant, default_value: Variant = null, invalid_value: Variant = null) -> Variant:
-	return default_value if is_same(value, invalid_value) else value
 
-
-## (SphereShape3D.new(), Bound.setter("radius", 1_000))
-static func with(value: Variant, callable: Callable) -> Variant:
-	callable.call(value)
-	return value
-
-
-## (Node3D.new(), { position = Vector3.LEFT, rotation = Vector3(PI, 0, 0) })
-static func with_properties(value: Variant, properties: Dictionary[StringName, Variant]) -> Variant:
-	for property in properties:
-		value.set(property, properties[property])
-	return value
 
 
 static func get_viewport_camera_3d(node: Node) -> Camera3D:
@@ -311,36 +264,36 @@ static func get_viewport_or_editor_camera_3d(node: Node, editor_viewport: int = 
 	return viewport.get_camera_3d() if viewport else null
 
 
-static func find_child_flat(parent: Node, predicate: Callable, owned: bool = true, include_internal: bool = true) -> Node:
-	if not parent: return null
-	for i in parent.get_child_count(include_internal):
-		var child := parent.get_child(i, include_internal)
-		if owned and child.owner != parent.owner and child.owner != parent: continue
-		if predicate.call(child): return child
-	return null
+#static func find_child_flat(parent: Node, predicate: Callable, owned: bool = true, include_internal: bool = true) -> Node:
+#	if not parent:  return null
+#	for i in parent.get_child_count(include_internal):
+#		var child: Node = parent.get_child(i, include_internal)
+#		if owned and child.owner != parent.owner and child.owner != parent and parent.owner:  continue
+#		if predicate.call(child): return child
+#	return null
 
 
-static func find_child_recursive_dfs(parent: Node, predicate: Callable, owned: bool = true, include_internal: bool = true) -> Node:
-	if not parent: return null
-	for i in parent.get_child_count(include_internal):
-		var child := parent.get_child(i, include_internal)
-		if (not owned or child.owner == parent.owner or child.owner == parent) and predicate.call(child): 
-			return child
-		var found := find_child_recursive_dfs(child, predicate, owned, include_internal)
-		if found: return found
-	return null
+#static func find_child_recursive_dfs(parent: Node, predicate: Callable, owned: bool = true, include_internal: bool = true) -> Node:
+#	if not parent: return null
+#	for i in parent.get_child_count(include_internal):
+#		var child := parent.get_child(i, include_internal)
+#		if (not owned or child.owner == parent.owner or child.owner == parent) and predicate.call(child): 
+#			return child
+#		var found := find_child_recursive_dfs(child, predicate, owned, include_internal)
+#		if found: return found
+#	return null
+#
+#
+#static func find_child_recursive_bfs(parent: Node, predicate: Callable, owned: bool = true, include_internal: bool = true) -> Node:
+#	var found := find_child_flat(parent, predicate, owned, include_internal)
+#	if found: return found
+#	for i in parent.get_child_count(include_internal):
+#		found = find_child_recursive_bfs(parent.get_child(i, include_internal), predicate, owned, include_internal)
+#		if found: return found
+#	return null
 
 
-static func find_child_recursive_bfs(parent: Node, predicate: Callable, owned: bool = true, include_internal: bool = true) -> Node:
-	var found := find_child_flat(parent, predicate, owned, include_internal)
-	if found: return found
-	for i in parent.get_child_count(include_internal):
-		found = find_child_recursive_bfs(parent.get_child(i, include_internal), predicate, owned, include_internal)
-		if found: return found
-	return null
-
-
-static func is_instance_of_string(obj: Object, type_string: String) -> bool:
+static func is_class_of(obj: Object, type_string: String) -> bool:
 	if not obj: return false
 	if obj.is_class(type_string): return true
 	
@@ -374,13 +327,80 @@ static func create_children(parent: Node, children_data: Array) -> void:
 			parent.add_child(node)
 
 
+
 #endregion Utils ###############################################################
+#region ########################################################################
+
+
+static func default(value: Variant, default_value: Variant = null, invalid_value: Variant = null) -> Variant:
+	return default_value if is_same(value, invalid_value) else value
+
+
+## (SphereShape3D.new(), Bound.setter("radius", 1_000))
+static func with(value: Variant, callable: Callable) -> Variant: callable.call(value); return value
+static func with_call(object: Object, method: StringName, ...args: Array) -> Object: object.callv(method, args); return object
+static func with_callv(object: Object, method: StringName, args: Array) -> Object: object.callv(method, args); return object
+
+static func with_property(object: Object, property: StringName, value: Variant) -> Object:
+	if object: object.set(property, value)
+	return object
+
+## (Node3D.new(), { position = Vector3.LEFT, rotation = Vector3(PI, 0, 0) })
+static func with_properties(value: Variant, properties: Dictionary[StringName, Variant]) -> Variant:
+	for property in properties:
+		value.set(property, properties[property])
+	return value
+
+
+static func call_or_connect(callable: Callable, predicate: Callable, p_signal: Signal) -> void:
+	if predicate.call(): callable.call()
+	p_signal.connect(callable, CONNECT_ONE_SHOT)
+
+
+static func toggle_property(object: Object, property: StringName, primary: Variant = true, secondary: Variant = false) -> void:
+	object.set(property, toggled(object.get(property), primary, secondary))
+
+
+static func toggle_indexed(object: Object, property: String, primary: Variant = true, secondary: Variant = false) -> void:
+	object.set_indexed(property, toggled(object.get_indexed(property), primary, secondary))
+
+
+static func swap(object: Object, property_a: StringName, property_b: StringName) -> void:
+	if object and property_a in object and property_b in object:
+		var a: Variant = object.get(property_a)
+		var b: Variant = object.get(property_b)
+		object.set(property_a, b)
+		object.set(property_b, a)
+
+
+static func swaps(a: Object, a_property: StringName, b: Object, b_property: StringName) -> void:
+	if a and a_property in a and b and b_property in b:
+		var a_value: Variant = a.get(a_property)
+		var b_value: Variant = b.get(b_property)
+		a.set(a_property, b_value)
+		b.set(b_property, a_value)
+
+
+static func shift_property(object: Object, property: StringName, min_value: Variant, max_value: Variant, offset: Variant = 1, wrapped: bool = true) -> void:
+	if wrapped: shift_property_wrapped(object, property, min_value, max_value, offset)
+	else: shift_property_clamped(object, property, min_value, max_value, offset)
+
+
+static func shift_property_wrapped(object: Object, property: StringName, min_value: Variant, max_value: Variant, offset: Variant = 1) -> void:
+	object.set(property, wrap(object.get(property) + offset, min_value, max_value))
+
+
+static func shift_property_clamped(object: Object, property: StringName, min_value: Variant, max_value: Variant, offset: Variant = 1) -> void:
+	object.set(property, clamp(object.get(property) + offset, min_value, max_value))
+
+
+
+#endregion #####################################################################
 #region Operator ###############################################################
 
 
-static func setted(object: Object, property: StringName, value: Variant) -> Object:
-	if object: object.set(property, value)
-	return object
+
+static func is_same_typed(value: Variant, ...values: Array) -> bool: return values.map(typeof).all(is_same.bind(typeof(value)))# if values else true
 
 
 static func is_number(what: Variant) -> bool: return typeof(what) in [TYPE_FLOAT, TYPE_INT]
@@ -1102,6 +1122,15 @@ static func get_linear_curve(a: Vector2 = Vector2.ZERO, b: Vector2 = Vector2.ONE
 	curve.add_point(a, 1, 1, Curve.TANGENT_LINEAR, Curve.TANGENT_LINEAR)
 	curve.add_point(b, 1, 1, Curve.TANGENT_LINEAR, Curve.TANGENT_LINEAR)
 	return curve
+
+static func curve_sample(curve: Curve, offset: float, default: float = 0.0) -> float:
+	return curve.sample(offset) if curve else default
+
+static func curve_sample_baked(curve: Curve, offset: float, default: float = 0.0) -> float:
+	return curve.sample_baked(offset) if curve else default
+ 
+
+
 
 
 #endregion Data ################################################################

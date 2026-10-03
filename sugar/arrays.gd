@@ -9,6 +9,7 @@ static func is_index_valid(array: Variant, index: int) -> bool:
 	var length: int = len(array)
 	return index >= -length and index < length
 
+
 static func get_or(array: Variant, index: int, default: Variant = null) -> Variant:
 	return array[index] if Utils.is_array(array) and is_index_valid(array, index) else default
 
@@ -103,6 +104,10 @@ static func sorted(array: Array) -> Array:
 	var duplicate: Array = array.duplicate()
 	duplicate.sort()
 	return duplicate
+
+
+static func without(array: Array, exceptions: Array) -> Array:
+	return Array(array.filter(Operator.not_inside.bind(exceptions)), array.get_typed_builtin(), array.get_typed_class_name(), array.get_typed_script())
 
 
 static func filtered(array: Array, predicate: Callable, inverse: bool = false) -> Array:
@@ -660,6 +665,33 @@ static func callv_each_if(array: Array, method: StringName, predicate: Callable,
 static func filtered_for(array: Array, predicate: Callable, callable: Callable) -> void: for_each_if(array, callable, predicate)
 static func filtered_call(array: Array, predicate: Callable, method: StringName, ...args: Array) -> void: callv_each_if(array, method, predicate, args)
 static func filtered_callv_method(array: Array, predicate: Callable, method: StringName, args: Array) -> void: callv_each_if(array, method, predicate, args)
+
+
+
+static func separate_changes(old_items: Array, new_items: Array) -> Dictionary[StringName, Array]:
+	var added: Array = []
+	var removed: Array = []
+	var retained: Array = []
+	
+	var old_set: Dictionary[Variant, bool] = {}
+	var new_set: Dictionary[Variant, bool] = {}
+	
+	for item: Variant in old_items: old_set[item] = true
+	for item: Variant in new_items: new_set[item] = true
+	
+	for item: Variant in new_items:
+		if item in old_set: retained.append(item)
+		else: added.append(item)
+	
+	for item: Variant in old_items:
+		if not new_set.has(item):
+			removed.append(item)
+	
+	return {
+		&"added": added,
+		&"removed": removed,
+		&"retained": retained
+	}
 
 
 #static func each_called(array: Array, item_method: StringName, ...args: Array) -> Array:

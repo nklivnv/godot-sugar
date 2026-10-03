@@ -58,6 +58,7 @@ static func is_setted(object: Object, property: StringName, value: Variant) -> b
 
 # --- LOGIC  ---
 
+
 static func is_true(value: Variant) -> bool: return value
 static func is_false(value: Variant) -> bool: return not value
  

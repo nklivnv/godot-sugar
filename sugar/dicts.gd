@@ -18,6 +18,9 @@ static func create(keys: Array, values: Array, default: Variant = null) -> Dicti
 	return result
 
 
+static func from_keys(keys: Array, callable: Callable) -> Dictionary: return create(keys, keys.map(callable))
+
+
 static func filled(keys: Array, value: Variant, type_key := TYPE_NIL, type_value := TYPE_NIL) -> Dictionary:
 	var dictionary: Dictionary = {} if [type_key, type_value].all(Operator.is_equal.bind(TYPE_NIL)) else Dictionary({}, type_key, "", null, type_value, "", null)
 	for key in keys:

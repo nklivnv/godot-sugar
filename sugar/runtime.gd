@@ -28,7 +28,7 @@ static func get_mask() -> Mode:
 	if OS.is_debug_build():      return Mode.BUILD_DEBUG
 	return                              Mode.BUILD_RELEASE
 
-static func is_mode(allowed: Mode) -> bool: return (allowed & get_mask()) != 0
+static func is_valid_mode(allowed: Mode) -> bool: return (allowed & get_mask()) != 0
 
 
 #static func is_runtime_mode(editor: bool = true, editor_play: bool = true, debug_build: bool = true, release_build: bool = true) -> bool:

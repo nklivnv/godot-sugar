@@ -1,4 +1,4 @@
-@abstract class_name OnceCaller extends Object # SingleCall, OnceCaller, CallDebouncer
+@abstract class_name OnceCaller extends Object
 
 
 static var _queue: Dictionary[Callable, bool]
@@ -11,6 +11,8 @@ static func call_deferred_once(callable: Callable) -> void:
 	erase.call_deferred(callable)
 
 
-#static func request(callable: Callable) -> void: call_deferred_once(callable)
 static func erase(callable: Callable) -> void: _queue.erase(callable)
 static func clear() -> void: _queue.clear()
+
+
+#static func request(callable: Callable) -> void: call_deferred_once(callable)

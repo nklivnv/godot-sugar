@@ -41,8 +41,8 @@ static func randi_range_avoid(a: int, b: int, avoid: int, default: int = a) -> i
 	return r if r < avoid else r + 1
 
 
-static func randi_range_avoids(a: int, b: int, avoid: PackedInt32Array, default: int = a) -> int:
-	var r := range(min(a, b), max(a, b) + 1).filter(Operator.not_inside.bind(avoid))
+static func randi_range_avoids(a: int, b: int, avoids: PackedInt32Array, default: int = a) -> int:
+	var r := range(min(a, b), max(a, b) + 1).filter(Operator.not_inside.bind(avoids))
 	return r.pick_random() if r else default
 
 
@@ -62,6 +62,9 @@ static func randi_range_avoids(a: int, b: int, avoid: PackedInt32Array, default:
 
 
 # --- 2D ---
+
+static func randf_range_2d(a: Vector2, b: Vector2) -> Vector2: return Vector2(randi_range(a.x, b.x), randi_range(a.y, b.y))
+static func randi_range_2d(a: Vector2i, b: Vector2i) -> Vector2i: return Vector2i(randi_range(a.x, b.x), randi_range(a.y, b.y))
 
 
 static func rand_on_circle() -> Vector2:

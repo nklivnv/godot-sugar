@@ -1,7 +1,6 @@
 class_name StateShifter
 extends RefCounted
 
-
 var states: Array = []
 var state: int = -1
 var default_value: Variant
