@@ -667,7 +667,11 @@ static func filtered_call(array: Array, predicate: Callable, method: StringName,
 static func filtered_callv_method(array: Array, predicate: Callable, method: StringName, args: Array) -> void: callv_each_if(array, method, predicate, args)
 
 
-
+## [code]
+## added
+## removed
+## retained
+## [/code]
 static func separate_changes(old_items: Array, new_items: Array) -> Dictionary[StringName, Array]:
 	var added: Array = []
 	var removed: Array = []
@@ -688,9 +692,9 @@ static func separate_changes(old_items: Array, new_items: Array) -> Dictionary[S
 			removed.append(item)
 	
 	return {
-		&"added": added,
-		&"removed": removed,
-		&"retained": retained
+		&"added": added,      # new
+		&"removed": removed,  # old
+		&"retained": retained # saved
 	}
 
 

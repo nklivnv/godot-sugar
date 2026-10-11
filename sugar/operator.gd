@@ -2,7 +2,12 @@
 
 
 
+static func is_rid_valid(rid: RID) -> bool: return rid.is_valid()
+static func is_rid_not_valid(rid: RID) -> bool: return not rid.is_valid()
+
+
 # --- CALLABLES ---
+
 
 static func safe_call(object: Object, method: StringName, ...args: Array) -> Variant: return safe_callv(object, method, args)
 static func safe_callv(object: Object, method: StringName, args: Array) -> Variant: return object.callv(method, args) if object and object.has_method(method) else null
@@ -45,9 +50,8 @@ static func is_inside_object(property: StringName, object: Object) -> bool: retu
 static func is_object_has(object: Object, property: StringName) -> bool: return property in object if object else null
 
 
+static func static_get(object: Object, property: StringName) -> Variant: return object.get(property)
 static func safe_get(object: Object, property: StringName, default: Variant = null) -> Variant: return object.get(property) if object and property in object else default
-#static func safe_getter(owner: Variant, key: Variant) -> Variant: return owner.get(key) if owner else null
-#static func safe_setter(owner: Variant, value: Variant, key: Variant) -> void: if owner: owner.set(key, value)
 
 static func is_setted(object: Object, property: StringName, value: Variant) -> bool:
 	if object and property in object and is_instance_of(object.get(property), typeof(value)):

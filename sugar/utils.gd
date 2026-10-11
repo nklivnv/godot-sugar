@@ -7,9 +7,36 @@ class_name Utils
 #region Utils #################################################################
 
 
+#func is_keycode_valid(event: InputEventKey, keycode: Key, allow_pressed: bool, allow_released: bool, pass_echo: bool = false, require_modifiers: int = 0, forbidden_modifiers: int = 0) -> bool:
+#	return event.keycode == keycode and _is_valid_key(event, allow_pressed, allow_released, pass_echo, require_modifiers, forbidden_modifiers)
+#
+#func is_physical_keycode_valid(event: InputEventKey, physical_keycode: Key, allow_pressed: bool, allow_released: bool, pass_echo: bool = false, require_modifiers: int = 0, forbidden_modifiers: int = 0) -> bool:
+#	return event.physical_keycode == physical_keycode and _is_valid_key(event, allow_pressed, allow_released, pass_echo, require_modifiers, forbidden_modifiers)
+#
+#func _is_valid_key(
+#	event: InputEventKey, 
+#	allow_pressed: bool, 
+#	allow_released: bool, 
+#	allow_echo: bool = false, 
+#	require_modifiers: int = 0,
+#	forbidden_modifiers: int = 0
+#) -> bool:
+#	if event.pressed and not allow_pressed: return false
+#	if not event.pressed and not allow_released: return false
+#	if event.echo and not allow_echo: return false
+#	
+#	var pressed_mods = event.get_modifiers_mask() & KEY_MODIFIER_MASK
+#	if (pressed_mods & require_modifiers) != require_modifiers: return false
+#	if (pressed_mods & forbidden_modifiers) != 0: return false
+#	
+#	return true
 
-static func is_node_in_all_groups(node: Node, groups: Array[StringName]) -> bool: return groups and groups.all(node.is_in_group)
-static func is_node_in_any_group(node: Node, groups: Array[StringName]) -> bool: return groups.any(node.is_in_group)
+
+#static func set_from(setter: Callable, getter: Callable) -> void: setter.call(getter.call())
+
+
+static func is_node_in_all_groups(node: Node, groups: Array[StringName]) -> bool: return groups.all(node.is_in_group)
+static func is_node_in_any_group(node: Node, groups: Array[StringName]) -> bool: return not groups or groups.any(node.is_in_group)
 static func is_node_not_in_any_group(node: Node, groups: Array[StringName]) -> bool: return not groups.any(node.is_in_group)
 
 
@@ -615,26 +642,28 @@ static func lerpf_clamped(a: float, b: float, weight: float) -> float:
 
 ## English: 32 - 126
 ## Russion: 1040 - 1103
-static func interpolate_string(from: String, to: String, weight: float, min_char: int = 32, max_char: int = 1103) -> String:
+static func interpolate_string(from: String, to: String, ratio: float, min_char: int = 32, max_char: int = 1103) -> String:
+	if not from or not to: return from if ratio < 0.5 else to
+	
 	var result := ""
-	var new_length := roundi(lerpf(len(from), len(to), weight))
+	var new_length := roundi(lerpf(len(from), len(to), ratio))
 	for i in new_length:
 		var t: float = i / float(maxi(new_length - 1, 1))
 		var code_from := ord(from[roundi(t * (len(from) - 1))])
 		var code_to := ord(to[roundi(t * (len(to) - 1))])
-		result += char(wrapi(roundi(lerpf(code_from, code_to, weight)), min_char, max_char + 1))
+		result += char(wrapi(roundi(lerpf(code_from, code_to, ratio)), min_char, max_char + 1))
 	return result
 
 
-#static func resource_interpolator(a: Variant, b: Variant, weight: float) -> Variant:
+#static func resource_interpolator(a: Variant, b: Variant, ratio: float) -> Variant:
 	#match typeof(a):
-		#TYPE_INT, TYPE_FLOAT: return lerp(a, b, weight)
-		#TYPE_STRING, TYPE_STRING_NAME: return lerp_string(a, b, weight)
-		#TYPE_VECTOR2, TYPE_VECTOR2I, TYPE_VECTOR3, TYPE_VECTOR3I, TYPE_VECTOR4, TYPE_VECTOR4I, TYPE_COLOR: return a.lerp(b, weight)
+		#TYPE_INT, TYPE_FLOAT: return lerp(a, b, ratio)
+		#TYPE_STRING, TYPE_STRING_NAME: return lerp_string(a, b, ratio)
+		#TYPE_VECTOR2, TYPE_VECTOR2I, TYPE_VECTOR3, TYPE_VECTOR3I, TYPE_VECTOR4, TYPE_VECTOR4I, TYPE_COLOR: return a.lerp(b, ratio)
 	#return null
 
 
-static func interpolate_resources(a: Resource, b: Resource, weight: float, interpolator: Callable = lerp, deep: bool = false) -> Resource:
+static func interpolate_resources(a: Resource, b: Resource, ratio: float, interpolator: Callable = lerp, deep: bool = false) -> Resource:
 	if not a and not b: return null
 	if a and not b: return a
 	if b and not a: return b
@@ -646,8 +675,8 @@ static func interpolate_resources(a: Resource, b: Resource, weight: float, inter
 	for property: StringName in property_names:
 		var a_value: Variant = a.get(property)
 		var b_value: Variant = b.get(property)
-		var interpolated_value: Variant = (interpolate_resources(a_value, b_value, weight, interpolator, deep)
-			if deep and is_instance_of(a_value, Resource) else interpolator.call(a_value, b_value, weight))
+		var interpolated_value: Variant = (interpolate_resources(a_value, b_value, ratio, interpolator, deep)
+			if deep and is_instance_of(a_value, Resource) else interpolator.call(a_value, b_value, ratio))
 		result.set(property, interpolated_value)
 	
 	return result
