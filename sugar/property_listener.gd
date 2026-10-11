@@ -20,29 +20,29 @@ class ListenData extends RefCounted:
 	var flags: Flags
 
 
-# Dictionary[instance_id (int), Dictionary[property_name (StringName), Array[ListenData]]]
+# { instance_id: int, { property_name: StringName, data: [ListenData] } }
 static var _listen_data: Dictionary[int, Dictionary] = {}
 
 
 static func _static_init() -> void:
 	var tree: SceneTree = Engine.get_main_loop() as SceneTree
-	if tree: tree.process_frame.connect(_process)
+	if tree: tree.process_frame.connect(_on_process)
 
 
-static func _process() -> void:
-	var _free_quit: Array[int] = []
+static func _on_process() -> void:
+	var _free_queue: Array[int] = []
 	
 	for instance_id: int in _listen_data:
 		var object: Object = instance_from_id(instance_id)
 		if not is_instance_valid(object):
-			_free_quit.append(instance_id)
+			_free_queue.append(instance_id)
 			continue
 		
 		_process_object_properties(object, _listen_data[instance_id])
 		
-		if _listen_data[instance_id].is_empty(): _free_quit.append(instance_id)
+		if _listen_data[instance_id].is_empty(): _free_queue.append(instance_id)
 	
-	for instance_id: int in _free_quit: 
+	for instance_id: int in _free_queue: 
 		_listen_data.erase(instance_id)
 
 
