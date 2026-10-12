@@ -40,6 +40,9 @@ static func pipev(callables: Array[Callable], args: Array = []) -> Variant:
 
 # --- COLLECTIONS ---
 
+## node.get_property_list().filter(Operator.where.bind("name", ["name_1", "name_2"].has)))
+static func where(where: Variant, key: Variant, callable: Callable) -> Variant: return callable.call(where.get(key))
+
 static func inside(what: Variant, where: Variant) -> bool: return what in where
 static func not_inside(what: Variant, where: Variant) -> bool: return what not in where
 static func has(where: Variant, what: Variant) -> bool: return what in where

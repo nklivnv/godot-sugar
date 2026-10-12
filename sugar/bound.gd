@@ -40,6 +40,9 @@ static func setter(key: Variant, value: Variant) -> Callable: return func(owner:
 static func safe_setter(key: Variant, value: Variant) -> Callable: return func(owner: Variant) -> void: if owner: owner.set(key, value)
 
 
+#static func for_key(key: Variant, callable: Callable) -> Callable: return func(where: Variant) -> Variant: return callable.call(where.get(key))
+static func where(key: Variant, callable: Callable) -> Callable: return Operator.where.bind(key, callable)
+
 static func is_key_equal(key: Variant, value: Variant) -> Callable: return Operator.is_key_equal.bind(key, value)
 
 ## [1,2].all(greater(0)) => true
