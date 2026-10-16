@@ -117,13 +117,11 @@ static func set_if_empty(dict: Dictionary, key: Variant, value: Variant) -> void
 	if key not in dict: dict[key] = value
 
 
-# Utils.init_with(dict.duplicate(), Dicts.exclude_keys.bind(keys)
-#func without_keys(dict: Dictionary, keys: Array) -> Dictionary:
-#	var result: Dictionary = dict.duplicate()
-#	exclude_keys(result, keys)
-#	return result
-
-
-#func exclude_keys(dict: Dictionary, keys: Array) -> void:
-#	for key in keys:
-#		dict.erase(key)
+## a,b:1,c:d:2,e:3,,f => {"a": null, "b": "1", "c": "d:2", "e": "3"}, "f": null}
+static func from_compressed_string(string: String, default: Variant = null, delimiter: String = ",", indicator: String = ":") -> Dictionary:
+	var res: Dictionary = {}
+	for part: String in string.split(delimiter):
+		var pair: PackedStringArray = part.strip_edges().split(indicator, true, 1)
+		var key: String = pair[0].strip_edges()
+		res[key] = pair[1].strip_edges() if len(pair) > 1 else default
+	return res

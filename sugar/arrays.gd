@@ -494,7 +494,7 @@ static func find_best(array: Array, comparator: Callable) -> Variant:
 	return array[index] if index >= 0 else null
 
 
-## ([$Nearest, $Farthest], func(node: Node3D) -> float: return global_position.get_distance_ti(node.global_position), min) -> $Nearest
+## ([$Nearest, $Farthest], func(node: Node3D) -> float: return global_position.get_distance_to(node.global_position), min) -> $Nearest
 static func find_best_keyed(array: Array, converter: Callable, comparator: Callable) -> Variant:
 	var index: int = find_index(array.map(converter), comparator)
 	return array[index] if index >= 0 else null

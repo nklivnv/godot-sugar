@@ -278,6 +278,18 @@ static func object_get_indexed(parent: Node, path: NodePath) -> Variant:
 	return object.get_indexed(property_path) if object and property_path else object
 
 
+static func object_set_indexed(parent: Node, path: NodePath, new: Variant) -> void:
+	if not parent: return
+	
+	var found: Array = parent.get_node_and_resource(path)
+	
+	var node: Node              = found[0]
+	var resource: Resource      = found[1]
+	var property_path: NodePath = found[2]
+	
+	var object: Object = resource if resource else node
+	#if object and property_path: object.set_indexed(property_path, new)
+	if object: object.set(path.get_concatenated_subnames(), new)
 
 
 
@@ -363,8 +375,13 @@ static func default(value: Variant, default_value: Variant = null, invalid_value
 	return default_value if is_same(value, invalid_value) else value
 
 
-## (SphereShape3D.new(), Bound.setter("radius", 1_000))
+## (SphereShape3D.new(), BoundBound.setter("radius", 1_000))
 static func with(value: Variant, callable: Callable) -> Variant: callable.call(value); return value
+static func withv(value: Variant, callables: Array[Callable]) -> Variant:
+	for callable: Callable in callables:
+		callable.call(value)
+	return value
+
 static func with_call(object: Object, method: StringName, ...args: Array) -> Object: object.callv(method, args); return object
 static func with_callv(object: Object, method: StringName, args: Array) -> Object: object.callv(method, args); return object
 
@@ -455,13 +472,22 @@ static func is_sequence(what: Variant) -> bool:
 #region Math ###################################################################
 
 
+# ease_bias, custom_ease
+func schlick_bias(x: float, curvature: float) -> float:
+	if is_zero_approx(curvature): return 0.0
+	if is_equal_approx(curvature, 1.0): return 1.0
+	var denominator: float = curvature * x + (1.0 - curvature) * (1.0 - x)
+	return (curvature * x) / denominator if not is_zero_approx(denominator) else x
+
+
+
 static func lerp3(a: Variant, b: Variant, c: Variant, weight: float) -> float:
 	var clamped_weight: float = clampf(weight, 0.0, 1.0)
 	return lerp(a, b, clamped_weight * 2.0) if clamped_weight < 0.5 else lerp(b, c, clamped_weight * 2.0 - 1.0)
 
 
-# Arrays.safe_reduce([...], Funcs.zip_3d.bind(minf)) -> вектор минимальных компонент
-# ((0,1,2), (2,1,0), min) => (0,1,0)
+## Arrays.safe_reduce([...], Funcs.zip_3d.bind(minf)) -> вектор минимальных компонент
+## ((0,1,2), (2,1,0), min) => (0,1,0)
 static func zip_3d(a: Vector3, b: Vector3, comparator: Callable) -> Vector3:
 	return Vector3(comparator.call(a.x, b.x), comparator.call(a.y, b.y), comparator.call(a.z, b.z))
 

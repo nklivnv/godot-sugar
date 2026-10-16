@@ -1,17 +1,21 @@
 class_name StateShifter
 extends RefCounted
 
+
 var states: Array = []
 var state: int = -1
 var default_value: Variant
+
 
 func _init(p_states: Array, init_state: int = 0, p_default_value: Variant = null) -> void:
 	states = p_states
 	state = init_state if states else -1 
 	default_value = p_default_value
 
+
 func is_at_front() -> bool: return not states or state == 0
 func is_at_back() -> bool: return not states or state == len(states) - 1 
+
 
 func shift(offset: int = 1, wrap_index: bool = true, skip_equals: bool = true, from_index: int = state) -> void:
 	if not states: state = -1; return
@@ -22,12 +26,12 @@ func shift(offset: int = 1, wrap_index: bool = true, skip_equals: bool = true, f
 	if skip_equals and states[target_index] == states[from_index]:
 		var step: int = 1 if offset >= 0 else -1
 		for i in range(1, size):
-			var next_idx: int = target_index + (i * step)
-			if not wrap_index and (next_idx < 0 or next_idx >= size): break
+			var next_index: int = target_index + (i * step)
+			if not wrap_index and (next_index < 0 or next_index >= size): break
 			
-			var actual_idx: int = wrapi(next_idx, 0, size) if wrap_index else next_idx
-			if states[actual_idx] != states[from_index]:
-				target_index = actual_idx
+			var actual_index: int = wrapi(next_index, 0, size) if wrap_index else next_index
+			if states[actual_index] != states[from_index]:
+				target_index = actual_index
 				break
 	
 	state = target_index

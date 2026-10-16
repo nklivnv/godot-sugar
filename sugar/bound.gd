@@ -33,17 +33,17 @@ static func safe_call_for(method: StringName, ...args: Array) -> Callable: retur
 static func safe_callv_for(method: StringName, args: Array = []) -> Callable: return lbind(Operator.safe_callv, method, args)# func(object: Object) -> Variant: return Operator.safe_callerv(object, method, args)
 
 
-static func getter(key: Variant) -> Callable: return func(owner: Variant) -> Variant: return owner.get(key)
-static func safe_getter(key: Variant) -> Callable: return func(owner: Variant) -> Variant: return owner.get(key) if owner else null
-
-static func setter(key: Variant, value: Variant) -> Callable: return func(owner: Variant) -> void: owner.set(key, value)
-static func safe_setter(key: Variant, value: Variant) -> Callable: return func(owner: Variant) -> void: if owner: owner.set(key, value)
+static func getter(key: Variant) -> Callable: return Operator.static_get.bind(key) #func(owner: Variant) -> Variant: return owner.get(key)
+static func safe_getter(key: Variant) -> Callable: return Operator.safe_get.bind(key, null) #func(owner: Variant) -> Variant: return owner.get(key) if owner else null
 
 
-#static func for_key(key: Variant, callable: Callable) -> Callable: return func(where: Variant) -> Variant: return callable.call(where.get(key))
-static func where(key: Variant, callable: Callable) -> Callable: return Operator.where.bind(key, callable)
+#static func setter(key: Variant, value: Variant) -> Callable: return func(owner: Variant) -> void: owner.set(key, value)
+static func setter(key: Variant, value: Variant) -> Callable: return Operator.static_set.bind(key, value)
+#static func safe_setter(key: Variant, value: Variant) -> Callable: return func(owner: Variant) -> void: if owner: owner.set(key, value)
 
-static func is_key_equal(key: Variant, value: Variant) -> Callable: return Operator.is_key_equal.bind(key, value)
+
+static func at(key: Variant, callable: Callable) -> Callable: return Operator.at.bind(key, callable)
+
 
 ## [1,2].all(greater(0)) => true
 static func is_greater(other: Variant) -> Callable: return Operator.is_greater.bind(other)

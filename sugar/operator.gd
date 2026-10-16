@@ -2,12 +2,12 @@
 
 
 
+
 static func is_rid_valid(rid: RID) -> bool: return rid.is_valid()
 static func is_rid_not_valid(rid: RID) -> bool: return not rid.is_valid()
 
 
 # --- CALLABLES ---
-
 
 static func safe_call(object: Object, method: StringName, ...args: Array) -> Variant: return safe_callv(object, method, args)
 static func safe_callv(object: Object, method: StringName, args: Array) -> Variant: return object.callv(method, args) if object and object.has_method(method) else null
@@ -40,21 +40,27 @@ static func pipev(callables: Array[Callable], args: Array = []) -> Variant:
 
 # --- COLLECTIONS ---
 
-## node.get_property_list().filter(Operator.where.bind("name", ["name_1", "name_2"].has)))
-static func where(where: Variant, key: Variant, callable: Callable) -> Variant: return callable.call(where.get(key))
+## objects.filter(Operator.at.bind("name", Operator.equal.bind("my_name"))
+## object.get_property_list().filter(Operator.at.bind("name", ["name_1", "name_2"].has)))
+static func at(container: Variant, key: Variant, callable: Callable) -> Variant: return callable.call(container.get(key))
 
-static func inside(what: Variant, where: Variant) -> bool: return what in where
-static func not_inside(what: Variant, where: Variant) -> bool: return what not in where
-static func has(where: Variant, what: Variant) -> bool: return what in where
-static func not_has(where: Variant, what: Variant) -> bool: return what not in where
+
+static func inside(value: Variant, container: Variant) -> bool:     return value in container
+static func not_inside(value: Variant, container: Variant) -> bool: return value not in container
+static func has(container: Variant, value: Variant) -> bool:        return value in container
+static func not_has(container: Variant, value: Variant) -> bool:    return value not in container
 
 
 static func is_inside_object(property: StringName, object: Object) -> bool: return property in object if object else null
 static func is_object_has(object: Object, property: StringName) -> bool: return property in object if object else null
 
 
-static func static_get(object: Object, property: StringName) -> Variant: return object.get(property)
-static func safe_get(object: Object, property: StringName, default: Variant = null) -> Variant: return object.get(property) if object and property in object else default
+static func static_get(container: Variant, key: Variant) -> Variant: return container.get(key)
+static func safe_get(container: Variant, key: Variant, default: Variant = null) -> Variant: return container.get(key) if container and key in container else default
+#static func object_get(object: Object, property: StringName) -> Variant: return object.get(property)
+
+static func static_set(container: Variant, property: StringName, value: Variant) -> void: container.set(property, value)
+#static func safe_set(container: Variant, property: StringName, value: Variant) -> void: if container: container.set(property, value)
 
 static func is_setted(object: Object, property: StringName, value: Variant) -> bool:
 	if object and property in object and is_instance_of(object.get(property), typeof(value)):
@@ -65,7 +71,6 @@ static func is_setted(object: Object, property: StringName, value: Variant) -> b
 
 # --- LOGIC  ---
 
-
 static func is_true(value: Variant) -> bool: return value
 static func is_false(value: Variant) -> bool: return not value
  
@@ -75,8 +80,6 @@ static func is_equali(a: int, b: int) -> bool: return a == b
 static func is_equalf(a: float, b: float) -> bool: return a == b
 
 static func is_not_equal(a: Variant, b: Variant) -> bool: return a != b
-
-static func is_key_equal(where: Variant, key: Variant, what: Variant) -> bool: return where.get(key) == what
 
 
 static func is_greater(a: Variant, b: Variant) -> bool: return a > b
@@ -126,14 +129,14 @@ static func divf(a: float, b: float) -> float: return a / b
 static func div_2d(a: Vector2, b: Vector2) -> Vector2: return a / b
 static func div_3d(a: Vector3, b: Vector3) -> Vector3: return a / b
 
-static func safe_divi(a: int, b: int, default: int = 0) -> int: return default if b == 0.0 else (a / b)
-static func safe_divf(a: float, b: float, default: float = 0.0) -> float: return default if is_zero_approx(b) else (a / b)
+static func safe_divi(a: int, b: int, default: int = INF) -> int: return default if b == 0.0 else (a / b)
+static func safe_divf(a: float, b: float, default: float = INF) -> float: return default if is_zero_approx(b) else (a / b)
 
-static func safe_div_2d(a: Vector2, b: Vector2, default := Vector2.ZERO) -> Vector2: return Vector2(
+static func safe_div_2d(a: Vector2, b: Vector2, default := Vector2.INF) -> Vector2: return Vector2(
 	default.x if is_zero_approx(b.x) else a.x / b.x,
 	default.y if is_zero_approx(b.y) else a.y / b.y)
 
-static func safe_div_3d(a: Vector3, b: Vector3, default := Vector3.ZERO) -> Vector3: return Vector3(
+static func safe_div_3d(a: Vector3, b: Vector3, default := Vector3.INF) -> Vector3: return Vector3(
 	default.x if is_zero_approx(b.x) else a.x / b.x,
 	default.y if is_zero_approx(b.y) else a.y / b.y,
 	default.z if is_zero_approx(b.z) else a.z / b.z)

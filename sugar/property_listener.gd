@@ -7,12 +7,14 @@ enum Flags {
 	DEFERRED      = 0b1,
 	ONE_SHOT      = 0b10,
 	
-	BIND_OBJECT   = 0b100,
-	BIND_PROPERTY = 0b1000,
-	BIND_VALUE    = 0b10000,
+	APPEND_OBJECT   = 0b100,
+	APPEND_PROPERTY = 0b1000,
+	APPEND_VALUE    = 0b10000,
 	
-	BIND_OBJECT_AND_VALUE = 0b10100,
+	APPEND_OBJECT_AND_VALUE = 0b10100,
+	APPEND_OBJECT_AND_PROPERTY_AND_VALUE = 0b11100,
 }
+
 
 class ListenData extends RefCounted:
 	var value: Variant
@@ -83,9 +85,9 @@ static func _process_property_listeners(object: Object, property: StringName, cu
 static func _execute_callback(object: Object, property: StringName, data: ListenData) -> void:
 	var final_callback: Callable = data.callback
 	
-	if data.flags & Flags.BIND_VALUE:    final_callback = final_callback.bind(data.value)
-	if data.flags & Flags.BIND_PROPERTY: final_callback = final_callback.bind(property)
-	if data.flags & Flags.BIND_OBJECT:   final_callback = final_callback.bind(object)
+	if data.flags & Flags.APPEND_VALUE:    final_callback = final_callback.bind(data.value)
+	if data.flags & Flags.APPEND_PROPERTY: final_callback = final_callback.bind(property)
+	if data.flags & Flags.APPEND_OBJECT:   final_callback = final_callback.bind(object)
 	
 	if data.flags & Flags.DEFERRED: final_callback.call_deferred()
 	else:                           final_callback.call()
