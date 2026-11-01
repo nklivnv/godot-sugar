@@ -1,13 +1,14 @@
 ## Use it for big data computation chains with early exit
 
+
 class_name LazyFlow
 extends RefCounted
 
 
-const BATCH_SIZE: int = 2**12
-
-
 class Batch extends RefCounted:
+	
+	const SIZE: int = 2**12
+	
 	var items: Array = []
 	
 	func clear() -> void: items.clear()
@@ -28,8 +29,8 @@ class ArrayIterator extends LazyIterator:
 	
 	func advance(batch: Batch) -> bool:
 		if _idx >= len(_arr): return false
-		batch.items = _arr.slice(_idx, _idx + BATCH_SIZE)
-		_idx += BATCH_SIZE
+		batch.items = _arr.slice(_idx, _idx + Batch.SIZE)
+		_idx += Batch.SIZE
 		return true
 
 
@@ -74,7 +75,7 @@ class TakeIterator extends LazyIterator:
 	func advance(batch: Batch) -> bool:
 		if _taken >= _limit: return false
 		if not _source.advance(batch): return false
-		var remaining := _limit - _taken
+		var remaining: int = _limit - _taken
 		if batch.size() > remaining: batch.items = batch.items.slice(0, remaining)
 		_taken += batch.size()
 		return true
@@ -92,7 +93,7 @@ class SkipIterator extends LazyIterator:
 	func advance(batch: Batch) -> bool:
 		while _skipped < _to_skip:
 			if not _source.advance(batch): return false
-			var remaining := _to_skip - _skipped
+			var remaining: int = _to_skip - _skipped
 			if batch.size() <= remaining:
 				_skipped += batch.size()
 				batch.clear()
@@ -109,17 +110,16 @@ var _head: LazyIterator
 func _init(p_head: LazyIterator = null) -> void: _head = p_head
 
 static func iter(array: Array) -> LazyFlow: return LazyFlow.new(ArrayIterator.new(array))
-func filter(f: Callable) -> LazyFlow: return LazyFlow.new(FilterIterator.new(_head, f))
-func map(f: Callable) -> LazyFlow: return LazyFlow.new(MapIterator.new(_head, f))
-func take(n: int) -> LazyFlow: return LazyFlow.new(TakeIterator.new(_head, n))
-func skip(n: int) -> LazyFlow: return LazyFlow.new(SkipIterator.new(_head, n))
+func filter(f: Callable)       -> LazyFlow: return LazyFlow.new(FilterIterator.new(_head, f))
+func map(f: Callable)          -> LazyFlow: return LazyFlow.new(MapIterator.new(_head, f))
+func take(n: int)              -> LazyFlow: return LazyFlow.new(TakeIterator.new(_head, n))
+func skip(n: int)              -> LazyFlow: return LazyFlow.new(SkipIterator.new(_head, n))
 
 
  
 # ==============================================================================
-# 🏁 4. ТЕРМИНАЛЬНЫЕ МЕТОДЫ (ВЫВОД)
+# Terminal methods
 # ==============================================================================
-
 
 func to_array() -> Array:
 	var result: Array = []
@@ -129,8 +129,8 @@ func to_array() -> Array:
 	return result
 
 
-func reduce(reductor: Callable, initial: Variant = null) -> Variant:
-	var result: Variant = initial
+func reduce(reductor: Callable, accum: Variant = null) -> Variant:
+	var result: Variant = accum
 	var batch := Batch.new()
 	while _head.advance(batch):
 		for item in batch.items:
@@ -153,17 +153,9 @@ func all(predicate: Callable) -> bool:
 
 
 
-
-
-
-
-
-
-
-
-
-
-
+# ==============================================================================
+# Benchmark
+# ==============================================================================
 
 static func benchmark() -> void:
 	var main_loop := Engine.get_main_loop()
