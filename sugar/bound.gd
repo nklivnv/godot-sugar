@@ -39,7 +39,9 @@ static func is_not_less(other: Variant) -> Callable:          return Operator.is
 ## [1,2].all(inside([1,2,3])) => true
 static func inside(container: Variant) -> Callable:           return Operator.inside.bind(container)
 static func not_inside(container: Variant) -> Callable:       return Operator.not_inside.bind(container)
+
 static func has(what: Variant) -> Callable:                   return Operator.has.bind(what)
+static func has_property(property: StringName) -> Callable:   return Operator.has_property.bind(property)
 static func not_has(what: Variant) -> Callable:               return Operator.not_has.bind(what)
 
 
@@ -64,3 +66,11 @@ static func pipev(callables: Array[Callable]) -> Callable:
 		var result: Variant = callables[0].callv(args)
 		for i: int in range(1, len(callables)): result = callables[i].call(result)
 		return result
+
+
+## nodes.filter(Bound.all(is_instance_of.bind(Node), Bound.has_property("my_property")))
+static func all(...predicates: Array) -> Callable:         return Operator.allv_custom.bind(predicates)
+static func allv(predicates: Array[Callable]) -> Callable: return Operator.allv_custom.bind(predicates)
+
+static func any(...predicates: Array) -> Callable:         return Operator.anyv_custom.bind(predicates)
+static func anyv(predicates: Array[Callable]) -> Callable: return Operator.anyv_custom.bind(predicates)

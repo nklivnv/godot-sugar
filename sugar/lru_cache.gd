@@ -1,4 +1,4 @@
-class_name LruCache
+class_name LRUCache
 extends RefCounted
 
 

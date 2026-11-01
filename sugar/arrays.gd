@@ -302,6 +302,11 @@ static func unique(array: Array) -> Array:
 	return Array(dict.keys(), array.get_typed_builtin(), array.get_typed_class_name(), array.get_typed_script())
 
 
+static func unique_typed(array: Variant) -> Variant:
+	assert(Utils.is_array(array))
+	return type_convert(unique(array), typeof(array))
+
+
 static func sets_intersects(a: Array, b: Array) -> bool: return a.any(b.has) if len(a) < len(b) else b.any(a.has)
 static func is_sub_set(subset: Array, p_set: Array) -> bool: return subset.all(p_set.has)
 
@@ -326,26 +331,8 @@ static func sets_xor(a: Array, b: Array) -> Array:
 #region ITERATIONS #############################################################
 
 
-# TODO нет поиска по ключу
-#static func find(array: Array, what: Variant, from: int = 0, default: Variant = null, key: String = "") -> Variant:
-	#if not key:
-		#var index: int = array.find(what, from)
-		#return array[index] if index >= 0 else default
-	
-	#else:
-		#var use_property_path: bool = ":" in key
-		#for i in len(array):
-			#var object: Variant = array[i]
-			#var value: Variant = object.get_indexed(key) if use_property_path else object.get(key)
-			#print(value)
-			#if value == what: return value
-	
-	#return default
-
-
-## ([1, 2], min) => 1
-## ([1], min) => 1
-## ([], min) => null
+## ([1], min, 0) => 0
+## ([ ], min, 0) => 0
 static func safe_reduce(array: Array, reductor: Callable, default: Variant = null) -> Variant:
 	return array.slice(1).reduce(reductor, array[0]) if array else default
 
@@ -393,7 +380,7 @@ static func find_first_cyclic(array: Array, predicate: Callable, from: int = 0, 
 
 
 ## ([-5, 3, -8], abs, Bound.greater(5)) => -8
-## (["лук", "арбалет", "меч"], len, Bound.greater(5)) => "арбалет"
+## (["123", "1234", "12345"], len, Bound.greater(3)) => "1234"
 ## (["A", "B", "C"], to_lower, Bound.equal("b")) => "B"
 static func find_first_custom(array: Array, converter: Callable, predicate: Callable, from: int = 0, default: Variant = null) -> Variant:
 	for i in range(from, len(array)):

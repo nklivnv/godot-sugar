@@ -9,6 +9,9 @@ static func is_rid_not_valid(rid: RID) -> bool: return not rid.is_valid()
 
 # --- CALLABLES ---
 
+static func call_with(callable: Callable, ...args: Array) -> Variant: return callable.callv(args)
+static func callv_with(callable: Callable, args: Array) -> Variant:   return callable.callv(args)
+
 static func static_call( object: Object, method: StringName, ...args: Array) -> Variant: return object.callv(method, args)
 static func static_callv(object: Object, method: StringName,    args: Array) -> Variant: return object.callv(method, args)
 static func safe_call(   object: Object, method: StringName, ...args: Array) -> Variant: return safe_callv(object, method, args)
@@ -54,9 +57,7 @@ static func not_inside( value: Variant, container: Variant) -> bool:          re
 static func has(    container: Variant,     value: Variant) -> bool:          return value in container
 static func not_has(container: Variant,     value: Variant) -> bool:          return value not in container
 
-
-static func is_inside_object(property: StringName, object: Object) -> bool:   return property in object if object else null
-static func is_object_has(object: Object, property: StringName   ) -> bool:   return property in object if object else null
+static func has_property(object: Object, property: StringName) -> bool:       return property in object if object else null
 
 
 static func static_get(  container: Variant,     key: Variant   ) -> Variant: return container.get(key)
@@ -106,8 +107,16 @@ static func is_not_less(a: Variant, b: Variant) -> bool:    return a >= b
 static func all(...array: Array) -> bool:                   return array.all(is_true)
 static func allv(array: Array) -> bool:                     return array.all(is_true)
 
+static func allv_custom(argument: Variant, predicates: Array[Callable]) -> bool:
+	return predicates.all(callv_with.bind(argument))
+
+
 static func any(...array: Array) -> bool:                   return array.any(is_true)
 static func anyv(array: Array) -> bool:                     return array.any(is_true)
+
+static func anyv_custom(argument: Variant, predicates: Array[Callable]) -> bool:
+	return predicates.any(callv_with.bind(argument))
+
 
 
 # --- MATH ---
