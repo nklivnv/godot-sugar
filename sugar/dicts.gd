@@ -3,6 +3,10 @@ extends Object
 class_name Dicts
 
 
+static func filter_keys(dict: Dictionary, predicate: Callable, invert: bool = false) -> void:
+	for key in dict.keys().filter(predicate if invert else Bound.negate(predicate)):
+		dict.erase(key)
+
 
 static func create(keys: Array, values: Array, default: Variant = null) -> Dictionary:
 	
@@ -28,28 +32,29 @@ static func filled(keys: Array, value: Variant, type_key := TYPE_NIL, type_value
 	return dict
 
 
+static func intersection(a: Dictionary, b: Dictionary) -> Dictionary:
+	var result: Dictionary
+	for key in a:
+		if key in b: result[key] = key
+	return result
+
+
 enum ConflictMode { OLD, NEW, SKIP }
 
-## Merge(overwrite = true):						(a, b, true, true, NEW)
-## Merge(overwrite = false):					(a, b, true, true, OLD)
-## Difference:												(a, b, true, false, SKIP)
-## Intersection:											(a, b, false, false, NEW)
-## XOR:																(a, b, true, true, SKIP)
-## Update_existing:										(a, b, true, false, NEW)
-## Fill_missing:											(a, b, true, true, OLD)
 
-## 1.		Merge / Overwrite:						true	true		(ConflictMode.NEW)
-## 2.		Merge / Keep Old:							true	true		(ConflictMode.OLD)
-## 3.		Keys XOR:											true	true		(ConflictMode.SKIP)
-## 4.		Keys Subtract (A - B):				true	false		(ConflictMode.SKIP)
-## 5.		Update Existing Keys:					true	false		(ConflictMode.NEW)
-## 6.		Keep Existing Keys:						true	false		(ConflictMode.OLD)
-## 7.		Keys Intersection (New):			false	false		(ConflictMode.NEW)
-## 8.		Keys Intersection (Old):			false	false		(ConflictMode.OLD)
-## 9.		Take Only New Keys:						false	true		(ConflictMode.NEW)
-## 10.	Fill Missing Keys:						false	true		(ConflictMode.OLD)
-## 11.	Keys Subtract (B - A):				false	true		(ConflictMode.SKIP)
-## 12.	Empty / Clear:								false	false		(ConflictMode.SKIP)
+## === KEYS: ===
+## Merge(overwrite = true):  true  true  NEW
+## Merge(overwrite = false): true  true  OLD
+## XOR:                      true  true  SKIP
+## Difference (A - B):       true  false SKIP
+## Difference (B - A):       false true  SKIP
+## Update Existing:          true  false NEW
+## Keep Existing:            true  false OLD
+## Intersection:             false false NEW
+## Intersection:             false false OLD
+## Take Only New:            false true  NEW
+## Fill Missing:             false true  OLD
+## Empty / Clear:            false false SKIP
 
 
 static func updated(a: Dictionary, b: Dictionary, include_unmatched_a: bool, include_unmatched_b: bool, conflict_mode: ConflictMode) -> Dictionary:
@@ -76,13 +81,13 @@ static func updated(a: Dictionary, b: Dictionary, include_unmatched_a: bool, inc
 
 
 static func keys_replaced(dict: Dictionary, keys: Array, default: Variant = null) -> Dictionary:
-	var result: Dictionary = {}
+	var result: Dictionary
 	for key in keys: result[key] = dict.get(key, default)
 	return result
 
 
 static func filtered(dict: Dictionary, key_value_predicate: Callable, invert: bool = false) -> Dictionary:
-	var result: Dictionary = {}
+	var result: Dictionary
 	
 	for key in dict:
 		var value: Variant = dict[key]
@@ -125,3 +130,11 @@ static func from_compressed_string(string: String, default: Variant = null, deli
 		var key: String = pair[0].strip_edges()
 		res[key] = pair[1].strip_edges() if len(pair) > 1 else default
 	return res
+
+#
+#static func erase_keys(dict: Dictionary, predicate: Callable, invert: bool = false) -> void:
+#	var invalid_keys: Array
+#	for key in dict: if predicate.call(key) != invert: invalid_keys.append(key)
+#	for key in invalid_keys: dict.erase(key)
+#
+#

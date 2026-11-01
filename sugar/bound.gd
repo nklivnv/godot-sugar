@@ -2,21 +2,10 @@
 class_name Bound
 
 
-
-#region ALIASES
-
-static func bound_callv(method: StringName, args: Array) -> Callable: return callv_for(method, args)
-static func bound_call(method: StringName, ...args: Array) -> Callable: return callv_for(method, args)
-static func bound_get(key: Variant) -> Callable: return getter(key)
-static func bound_set(key: Variant, value: Variant) -> Callable: return setter(key, value)
-
-#endregion ALIASES
-
-
 ## (f, 1).call(2) => f.bind(1, 2)
 static func lbind(callable: Callable, ...args: Array) -> Callable: return lbindv(callable, args)
-static func lbindv(callable: Callable, args: Array) -> Callable: return func(...right_args: Array) -> void: return callable.callv(args + right_args)
-static func lrbind(callable: Callable, left: Array = [], right: Array = []) -> Callable: return lbind(callable, left).bind(right)
+static func lbindv(callable: Callable, args: Array) -> Callable:   return func(...right_args: Array) -> void: return callable.callv(args + right_args)
+static func lrbind(callable: Callable, left: Array = [], right: Array = []) -> Callable: return lbindv(callable, left).bind(right)
 
 
 ## (f(...) -> bool) => { return not f(...) }
@@ -25,43 +14,38 @@ static func negate(predicate: Callable) -> Callable: return func(...args: Array)
 
 ## Erase button from buttons if exiting child is Button:
 ## >> child_exiting_tree.connect(call_if(buttons.erase, is_instance_of.bind(Button)))
-static func call_if(callable: Callable, predicate: Callable) -> Callable: return func(...args: Array) -> Variant: return callable.callv(args) if predicate.callv(args) else null 
+static func call_if(callable: Callable, predicate: Callable) -> Callable:  return func(...args: Array) -> Variant: return callable.callv(args) if predicate.callv(args) else null
 
-static func call_for(method: StringName, ...args: Array) -> Callable: return callv_for(method, args)
-static func callv_for(method: StringName, args: Array = []) -> Callable: return func(object: Object) -> Variant: return object.callv(method, args)
-static func safe_call_for(method: StringName, ...args: Array) -> Callable: return safe_callv_for(method, args)
-static func safe_callv_for(method: StringName, args: Array = []) -> Callable: return lbind(Operator.safe_callv, method, args)# func(object: Object) -> Variant: return Operator.safe_callerv(object, method, args)
-
-
-static func getter(key: Variant) -> Callable: return Operator.static_get.bind(key) #func(owner: Variant) -> Variant: return owner.get(key)
-static func safe_getter(key: Variant) -> Callable: return Operator.safe_get.bind(key, null) #func(owner: Variant) -> Variant: return owner.get(key) if owner else null
+static func bound_call(method: StringName, ...args: Array) -> Callable:    return bound_callv(method, args)
+static func bound_callv(method: StringName, args: Array = []) -> Callable: return func(object: Object) -> Variant: return object.callv(method, args)
+static func safe_call(method: StringName, ...args: Array) -> Callable:     return safe_callv(method, args)
+static func safe_callv(method: StringName, args: Array = []) -> Callable:  return lbind(Operator.safe_callv, method, args)# func(object: Object) -> Variant: return Operator.safe_callerv(object, method, args)
 
 
-#static func setter(key: Variant, value: Variant) -> Callable: return func(owner: Variant) -> void: owner.set(key, value)
-static func setter(key: Variant, value: Variant) -> Callable: return Operator.static_set.bind(key, value)
-#static func safe_setter(key: Variant, value: Variant) -> Callable: return func(owner: Variant) -> void: if owner: owner.set(key, value)
-
+static func bound_get(key: Variant) -> Callable:                 return Operator.static_get.bind(key)
+static func bound_set(key: Variant, value: Variant) -> Callable: return Operator.static_set.bind(key, value)
 
 static func at(key: Variant, callable: Callable) -> Callable: return Operator.at.bind(key, callable)
 
 
-## [1,2].all(greater(0)) => true
-static func is_greater(other: Variant) -> Callable: return Operator.is_greater.bind(other)
-static func is_not_greater(other: Variant) -> Callable: return Operator.is_not_greater.bind(other)
-static func is_less(other: Variant) -> Callable: return Operator.is_less.bind(other)
-static func is_not_less(other: Variant) -> Callable:  return Operator.is_not_less.bind(other)
+static func is_equal(other: Variant) -> Callable:             return Operator.is_equal.bind(other)
+
+## [1,2].all(is_greater(0)) => true
+static func is_greater(other: Variant) -> Callable:           return Operator.is_greater.bind(other)
+static func is_not_greater(other: Variant) -> Callable:       return Operator.is_not_greater.bind(other)
+static func is_less(other: Variant) -> Callable:              return Operator.is_less.bind(other)
+static func is_not_less(other: Variant) -> Callable:          return Operator.is_not_less.bind(other)
 
 ## [1,2].all(inside([1,2,3])) => true
-static func inside(where: Variant) -> Callable: return Operator.inside.bind(where)
-static func not_inside(where: Variant) -> Callable: return Operator.not_inside.bind(where)
-static func has(what: Variant) -> Callable: return Operator.has.bind(what)
-static func not_has(what: Variant) -> Callable: return Operator.not_has.bind(what)
-
+static func inside(container: Variant) -> Callable:           return Operator.inside.bind(container)
+static func not_inside(container: Variant) -> Callable:       return Operator.not_inside.bind(container)
+static func has(what: Variant) -> Callable:                   return Operator.has.bind(what)
+static func not_has(what: Variant) -> Callable:               return Operator.not_has.bind(what)
 
 
 ## (f1, f2, f3) => { f1(); f2(); f3() }
-static func chain(...callables: Array) -> Callable: return chainv(Array(callables, TYPE_CALLABLE, "", null))
-static func chainv(callables: Array[Callable]) -> Callable: return Callable() if callables.is_empty() else Operator.chainv.bind(callables)
+static func chain(...callables: Array) -> Callable:           return chainv(Array(callables, TYPE_CALLABLE, "", null))
+static func chainv(callables: Array[Callable]) -> Callable:   return Callable() if callables.is_empty() else Operator.chainv.bind(callables)
 
 
 ## (f1, f2, f3) => { f1(f2(f3)) }

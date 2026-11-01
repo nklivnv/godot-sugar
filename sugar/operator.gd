@@ -3,20 +3,22 @@
 
 
 
-static func is_rid_valid(rid: RID) -> bool: return rid.is_valid()
+static func is_rid_valid(    rid: RID) -> bool: return rid.is_valid()
 static func is_rid_not_valid(rid: RID) -> bool: return not rid.is_valid()
 
 
 # --- CALLABLES ---
 
-static func safe_call(object: Object, method: StringName, ...args: Array) -> Variant: return safe_callv(object, method, args)
-static func safe_callv(object: Object, method: StringName, args: Array) -> Variant: return object.callv(method, args) if object and object.has_method(method) else null
-#static func call_for_key(object: Object, key: Variant, method: Callable) -> Variant: return method.call(object.get(key))
+static func static_call( object: Object, method: StringName, ...args: Array) -> Variant: return object.callv(method, args)
+static func static_callv(object: Object, method: StringName,    args: Array) -> Variant: return object.callv(method, args)
+static func safe_call(   object: Object, method: StringName, ...args: Array) -> Variant: return safe_callv(object, method, args)
+static func safe_callv(  object: Object, method: StringName,    args: Array) -> Variant: return object.callv(method, args) if object and object.has_method(method) else null
 
 
 ## (f1, f2, f3) => f1(); f2(); f3()
 static func chain(...callables: Array) -> Variant: return chainv(callables)
 static func chainv(callables: Array[Callable]) -> Variant:
+	if not callables: return
 	for callable in callables.slice(0, len(callables)-1):
 		callable.call()
 	return callables[-1].call()
@@ -44,25 +46,30 @@ static func pipev(callables: Array[Callable], args: Array = []) -> Variant:
 ## object.get_property_list().filter(Operator.at.bind("name", ["name_1", "name_2"].has)))
 static func at(container: Variant, key: Variant, callable: Callable) -> Variant: return callable.call(container.get(key))
 
-
-static func inside(value: Variant, container: Variant) -> bool:     return value in container
-static func not_inside(value: Variant, container: Variant) -> bool: return value not in container
-static func has(container: Variant, value: Variant) -> bool:        return value in container
-static func not_has(container: Variant, value: Variant) -> bool:    return value not in container
+static func for_each(callable: Callable, container: Variant) -> void: for item: Variant in container: callable.call(item)
 
 
-static func is_inside_object(property: StringName, object: Object) -> bool: return property in object if object else null
-static func is_object_has(object: Object, property: StringName) -> bool: return property in object if object else null
+static func inside(     value: Variant, container: Variant) -> bool:          return value in container
+static func not_inside( value: Variant, container: Variant) -> bool:          return value not in container
+static func has(    container: Variant,     value: Variant) -> bool:          return value in container
+static func not_has(container: Variant,     value: Variant) -> bool:          return value not in container
 
 
-static func static_get(container: Variant, key: Variant) -> Variant: return container.get(key)
-static func safe_get(container: Variant, key: Variant, default: Variant = null) -> Variant: return container.get(key) if container and key in container else default
-#static func object_get(object: Object, property: StringName) -> Variant: return object.get(property)
+static func is_inside_object(property: StringName, object: Object) -> bool:   return property in object if object else null
+static func is_object_has(object: Object, property: StringName   ) -> bool:   return property in object if object else null
 
-static func static_set(container: Variant, property: StringName, value: Variant) -> void: container.set(property, value)
-#static func safe_set(container: Variant, property: StringName, value: Variant) -> void: if container: container.set(property, value)
 
-static func is_setted(object: Object, property: StringName, value: Variant) -> bool:
+static func static_get(  container: Variant,     key: Variant   ) -> Variant: return container.get(key)
+static func object_get(     object: Object, property: StringName) -> Variant: return object.get(property)
+static func object_safe_get(object: Object, property: StringName, default: Variant = null) -> Variant: return object.get(property) if object else default
+
+
+static func static_set(container: Variant, property: StringName, value: Variant) -> void:  container.set(property, value)
+static func object_set(object: Object, property: StringName, value: Variant) -> void:      object.set(property, value)
+static func object_safe_set(object: Object, property: StringName, value: Variant) -> void: if object: object.set(property, value)
+
+
+static func is_object_setted(object: Object, property: StringName, value: Variant) -> bool:
 	if object and property in object and is_instance_of(object.get(property), typeof(value)):
 		object.set(property, value)
 		return true
@@ -71,65 +78,65 @@ static func is_setted(object: Object, property: StringName, value: Variant) -> b
 
 # --- LOGIC  ---
 
-static func is_true(value: Variant) -> bool: return value
-static func is_false(value: Variant) -> bool: return not value
+static func is_true(value: Variant ) -> bool:               return value
+static func is_false(value: Variant) -> bool:               return not value
  
 
-static func is_equal(a: Variant, b: Variant) -> bool: return a == b
-static func is_equali(a: int, b: int) -> bool: return a == b
-static func is_equalf(a: float, b: float) -> bool: return a == b
+static func is_equal( a: Variant, b: Variant) -> bool:      return a == b
+static func is_equali(a: int,     b: int) -> bool:          return a == b
+static func is_equalf(a: float,   b: float) -> bool:        return a == b
 
-static func is_not_equal(a: Variant, b: Variant) -> bool: return a != b
+static func is_not_equal(a: Variant, b: Variant) -> bool:   return a != b
 
 
-static func is_greater(a: Variant, b: Variant) -> bool: return a > b
-static func is_greateri(a: int, b: int) -> bool: return a > b
-static func is_greaterf(a: float, b: float) -> bool: return a > b
+static func is_greater( a: Variant, b: Variant) -> bool:    return a > b
+static func is_greateri(a: int,     b: int    ) -> bool:    return a > b
+static func is_greaterf(a: float,   b: float  ) -> bool:    return a > b
 
 static func is_not_greater(a: Variant, b: Variant) -> bool: return a <= b
 
 
-static func is_less(a: Variant, b: Variant) -> bool: return a < b
-static func is_lessi(a: int, b: int) -> bool: return a < b
-static func is_lessf(a: float, b: float) -> bool: return a < b
+static func is_less( a: Variant, b: Variant) -> bool:       return a < b
+static func is_lessi(a: int,     b: int) -> bool:           return a < b
+static func is_lessf(a: float,   b: float) -> bool:         return a < b
 
-static func is_not_less(a: Variant, b: Variant) -> bool: return a >= b
+static func is_not_less(a: Variant, b: Variant) -> bool:    return a >= b
 
 
-static func all(...array: Array) -> bool: return array.all(is_true)
-static func allv(array: Array) -> bool: return array.all(is_true)
+static func all(...array: Array) -> bool:                   return array.all(is_true)
+static func allv(array: Array) -> bool:                     return array.all(is_true)
 
-static func any(...array: Array) -> bool: return array.any(is_true)
-static func anyv(array: Array) -> bool: return array.any(is_true)
+static func any(...array: Array) -> bool:                   return array.any(is_true)
+static func anyv(array: Array) -> bool:                     return array.any(is_true)
 
 
 # --- MATH ---
 
-static func add(a: Variant, b: Variant) -> Variant: return a + b
-static func addi(a: int, b: int) -> int: return a + b
-static func addf(a: float, b: float) -> float: return a + b
+static func add(   a: Variant, b: Variant) -> Variant: return a + b
+static func addi(  a: int,     b: int    ) -> int:     return a + b
+static func addf(  a: float,   b: float  ) -> float:   return a + b
 static func add_2d(a: Vector2, b: Vector2) -> Vector2: return a + b
 static func add_3d(a: Vector3, b: Vector3) -> Vector3: return a + b
 
-static func sub(a: Variant, b: Variant) -> Variant: return a - b
-static func subi(a: int, b: int) -> int: return a - b
-static func subf(a: float, b: float) -> float: return a - b
+static func sub(   a: Variant, b: Variant) -> Variant: return a - b
+static func subi(  a: int,     b: int    ) -> int:     return a - b
+static func subf(  a: float,   b: float  ) -> float:   return a - b
 static func sub_2d(a: Vector2, b: Vector2) -> Vector2: return a - b
 static func sub_3d(a: Vector3, b: Vector3) -> Vector3: return a - b
 
-static func mul(a: Variant, b: Variant) -> Variant: return a * b
-static func muli(a: int, b: int) -> int: return a * b
-static func mulf(a: float, b: float) -> float: return a * b
+static func mul(   a: Variant, b: Variant) -> Variant: return a * b
+static func muli(  a: int, b: int        ) -> int:     return a * b
+static func mulf(  a: float, b: float    ) -> float:   return a * b
 static func mul_2d(a: Vector2, b: Vector2) -> Vector2: return a * b
 static func mul_3d(a: Vector3, b: Vector3) -> Vector3: return a * b
 
-static func div(a: Variant, b: Variant) -> Variant: return a / b
-static func divi(a: int, b: int) -> int: return a / b
-static func divf(a: float, b: float) -> float: return a / b
+static func div(   a: Variant, b: Variant) -> Variant: return a / b
+static func divi(  a: int,     b: int    ) -> int:     return a / b
+static func divf(  a: float,   b: float  ) -> float:   return a / b
 static func div_2d(a: Vector2, b: Vector2) -> Vector2: return a / b
 static func div_3d(a: Vector3, b: Vector3) -> Vector3: return a / b
 
-static func safe_divi(a: int, b: int, default: int = INF) -> int: return default if b == 0.0 else (a / b)
+static func safe_divi(a: int,   b: int,   default: int   = INF) -> int:   return default if b == 0.0 else (a / b)
 static func safe_divf(a: float, b: float, default: float = INF) -> float: return default if is_zero_approx(b) else (a / b)
 
 static func safe_div_2d(a: Vector2, b: Vector2, default := Vector2.INF) -> Vector2: return Vector2(

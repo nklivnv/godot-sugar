@@ -13,6 +13,3 @@ static func call_deferred_once(callable: Callable) -> void:
 
 static func erase(callable: Callable) -> void: _queue.erase(callable)
 static func clear() -> void: _queue.clear()
-
-
-#static func request(callable: Callable) -> void: call_deferred_once(callable)

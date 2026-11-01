@@ -55,39 +55,36 @@ static func swap_signal(old: Signal, new: Signal, callback: Callable, flags: Con
 	connect_signal(new, callback, flags)
 
 static func update_signal(signal_: Signal, callback: Callable, active: bool, flags: ConnectFlags = 0) -> void:
-	if active: reconnect_signal(signal_, callback, flags)
+	if active: reconnect_signal(signal_, callback, flags) # не connect_signal из-за, возможно, новых привязанных аргументов
 	else: disconnect_signal(signal_, callback)
 
 
 
 # --- Until: ---
 
-class Connection:
-	
-	var _signal: Signal
-	var _callback: Callable
-	var _flags: ConnectFlags = 0
-	
-	func _init(signal_: Signal, callback: Callable, flags: ConnectFlags = 0) -> void:
-		_signal = signal_
-		_callback = callback
-		_flags = flags
-	
-	func realize() -> int: return _signal.connect(_callback, _flags)
-	func cancel() -> void: _signal.disconnect(_callback)
+static func connect_signal_until(connection_signal: Signal, callback: Callable, disconnection_signal: Signal, flags: ConnectFlags = 0) -> void:
+	connection_signal.connect(callback, flags)
+	disconnection_signal.connect(connection_signal.disconnect.bind(callback), CONNECT_ONE_SHOT)
 
 
-static func connect_signals_until(connections: Array[Connection], disconnect_signal: Signal) -> void:
-	for connection in connections:
-		connection.realize()
-	
-	var cleaner: Callable = func() -> void:
-		for connection in connections:
-			connection.cancel()
-	
-	disconnect_signal.connect(cleaner, CONNECT_ONE_SHOT)
+#class Connection:
+#	
+#	var _signal: Signal
+#	var _callback: Callable
+#	var _flags: ConnectFlags
+#	
+#	func _init(signal_: Signal, callback: Callable, flags: ConnectFlags = 0) -> void:
+#		_signal = signal_
+#		_callback = callback
+#		_flags = flags
+#	
+#	func realize() -> int: return _signal.connect(_callback, _flags)
+#	func cancel() -> void: _signal.disconnect(_callback)
 
+#static func connect_signals_until(connections: Array[Connection], disconnection_signal: Signal) -> void:
+#	for connection in connections: connection.realize()
+#	#var cancel_connections := func() -> void: for connection in connections: connection.cancel()
+#	disconnection_signal.connect(_cancel_connections.bind(connections), CONNECT_ONE_SHOT)
 
-static func connect_signal_until(signal_: Signal, callback: Callable, disconnect_signal: Signal, flags: ConnectFlags = 0) -> void:
-	signal_.connect(callback, flags)
-	disconnect_signal.connect(signal_.disconnect.bind(callback), CONNECT_ONE_SHOT)
+#static func _cancel_connections(connections: Array[Connection]) -> void:
+#	for connection in connections: connection.cancel()

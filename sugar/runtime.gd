@@ -6,19 +6,19 @@ class_name Runtime
 enum Mode {
 	NONE           = 0,
 	
-	EDITOR_ONLY    = 1 << 0,                          # 0001
-	EDITOR_PLAYING = 1 << 1,                          # 0010
-	EDITOR_ANY     = EDITOR_ONLY    | EDITOR_PLAYING, # 0011
+	EDITOR_ONLY    = 1 << 0,                          ## 0001
+	EDITOR_PLAYING = 1 << 1,                          ## 0010
+	EDITOR_ANY     = EDITOR_ONLY    | EDITOR_PLAYING, ## 0011
 	
-	BUILD_DEBUG    = 1 << 2,                          # 0100
-	BUILD_RELEASE  = 1 << 3,                          # 1000
-	BUILD_ANY      = BUILD_DEBUG    | BUILD_RELEASE,  # 1100
+	BUILD_DEBUG    = 1 << 2,                          ## 0100
+	BUILD_RELEASE  = 1 << 3,                          ## 1000
+	BUILD_ANY      = BUILD_DEBUG    | BUILD_RELEASE,  ## 1100
 	
-	DEBUG_PLAYING  = EDITOR_PLAYING | BUILD_DEBUG,    # 0110
-	DEBUG_ANY      = BUILD_DEBUG    | EDITOR_ANY,     # 0111
-	PLAYING        = BUILD_ANY      | EDITOR_PLAYING, # 1110
+	DEBUG_PLAYING  = EDITOR_PLAYING | BUILD_DEBUG,    ## 0110
+	DEBUG_ANY      = BUILD_DEBUG    | EDITOR_ANY,     ## 0111
+	PLAYING        = BUILD_ANY      | EDITOR_PLAYING, ## 1110
 	
-	ALWAYS         = EDITOR_ANY     | BUILD_ANY,      # 1111
+	ALWAYS         = EDITOR_ANY     | BUILD_ANY,      ## 1111
 }
 
 

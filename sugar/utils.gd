@@ -35,6 +35,22 @@ class_name Utils
 #static func set_from(setter: Callable, getter: Callable) -> void: setter.call(getter.call())
 
 
+
+static func vector_size(vector: Variant) -> int:
+	match typeof(vector):
+		TYPE_FLOAT,   TYPE_INT:      return 1
+		TYPE_VECTOR2, TYPE_VECTOR2I: return 2
+		TYPE_VECTOR3, TYPE_VECTOR3I: return 3
+		TYPE_VECTOR4, TYPE_VECTOR4I: return 4
+	return len(vector)
+
+
+static func vector_map(vector: Variant, transformer: Callable) -> Variant:
+	for i in vector_size(vector):
+		vector[i] = transformer.call(vector[i])
+	return vector 
+
+
 static func is_node_in_all_groups(node: Node, groups: Array[StringName]) -> bool: return groups.all(node.is_in_group)
 static func is_node_in_any_group(node: Node, groups: Array[StringName]) -> bool: return not groups or groups.any(node.is_in_group)
 static func is_node_not_in_any_group(node: Node, groups: Array[StringName]) -> bool: return not groups.any(node.is_in_group)
@@ -72,9 +88,14 @@ static func is_geometry_instance_on_screen_3d(viewport: Viewport, instance: Geom
 
 
 
-static func is_dictionary_valid_access(dictionary: Dictionary, key: Variant, only_exists: bool = false) -> bool: return dictionary is Dictionary and (not only_exists or key in dictionary)
-static func is_object_valid_access(object: Variant, property: Variant) -> bool: return object is Object and (property is StringName or property is String) and property in object
-static func is_array_valid_access(array: Variant, index: Variant) -> bool: return is_array(array) and index is int and Arrays.is_index_valid(array, index) #and [].is_same_typed([])
+static func is_dictionary_valid_access(dictionary: Dictionary, key: Variant, only_exists: bool = false) -> bool:
+	return dictionary is Dictionary and (not only_exists or key in dictionary)
+
+static func is_object_valid_access(object: Variant, property: Variant) -> bool:
+	return object is Object and (property is StringName or property is String) and property in object
+
+static func is_array_valid_access(array: Variant, index: Variant) -> bool:
+	return is_array(array) and index is int and Arrays.is_index_valid(array, index) #and [].is_same_typed([])
 
 
 ## Для обновления больших массивов внутри _process с пропусками
@@ -184,19 +205,19 @@ static func format_usec(usec: float, decimals: int = 3) -> String:
 static func get_class_property_names(type: StringName, no_inheritance: bool = false, usage: PropertyUsageFlags = PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_SCRIPT_VARIABLE) -> PackedStringArray:
 	return ClassDB.class_get_property_list(type, no_inheritance) \
 		.filter(func(p: Dictionary) -> bool: return p.usage & usage) \
-		.map(Bound.getter("name"))
+		.map(Bound.bound_get("name"))
 
 
 static func get_object_property_names(object: Object, usage: PropertyUsageFlags = PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_SCRIPT_VARIABLE) -> PackedStringArray:
 	return [] if not object else object.get_property_list() \
 		.filter(func(p: Dictionary) -> bool: return p.usage & usage) \
-		.map(Bound.getter("name"))
+		.map(Bound.bound_get("name"))
 
 
 static func get_object_method_names(object: Object, flags: MethodFlags = MethodFlags.METHOD_FLAGS_DEFAULT) -> PackedStringArray:
 	return [] if not object else object.get_method_list() \
 		.filter(func(d: Dictionary) -> bool: return d.flags & flags) \
-		.map(Bound.getter("name"))
+		.map(Bound.bound_get("name"))
 
 
 static func transact(
@@ -254,20 +275,19 @@ static func transact(
 	#to.set(to_property, to_value + given)
 
 
-static func get_resource_or_node(parent: Node, path: NodePath) -> Object:
-	if not parent: return null
-	
-	var found: Array = parent.get_node_and_resource(path)
-	
-	var node: Node =         found[0]
-	var resource: Resource = found[1]
-	
-	return resource if resource else node
+#static func get_resource_or_node(parent: Node, path: NodePath) -> Object:
+#	if not parent: return null
+#	
+#	var found: Array = parent.get_node_and_resource(path)
+#	
+#	var node: Node =         found[0]
+#	var resource: Resource = found[1]
+#	
+#	return resource if resource else node
 
 
 static func object_get_indexed(parent: Node, path: NodePath) -> Variant:
-	if not parent: return
-	
+	if not parent or path.is_empty(): return
 	var found: Array = parent.get_node_and_resource(path)
 	
 	var node: Node              = found[0]
@@ -279,17 +299,17 @@ static func object_get_indexed(parent: Node, path: NodePath) -> Variant:
 
 
 static func object_set_indexed(parent: Node, path: NodePath, new: Variant) -> void:
-	if not parent: return
-	
+	if not parent or path.is_empty(): return
 	var found: Array = parent.get_node_and_resource(path)
 	
-	var node: Node              = found[0]
 	var resource: Resource      = found[1]
 	var property_path: NodePath = found[2]
 	
-	var object: Object = resource if resource else node
-	#if object and property_path: object.set_indexed(property_path, new)
-	if object: object.set(path.get_concatenated_subnames(), new)
+	if resource and property_path: resource.set_indexed(property_path, new)
+	else:
+		var node: Node = found[0] if found[0] is Node else parent
+		var subnames := path.get_concatenated_subnames()
+		if subnames: node.set_indexed(NodePath(subnames), new)
 
 
 
@@ -374,6 +394,12 @@ static func create_children(parent: Node, children_data: Array) -> void:
 static func default(value: Variant, default_value: Variant = null, invalid_value: Variant = null) -> Variant:
 	return default_value if is_same(value, invalid_value) else value
 
+static func take_if(value: Variant, predicate: Callable, default_value: Variant = null, inverted: bool = false) -> Variant:
+	return value if bool(predicate.call(value)) != inverted else default_value
+
+#static func switch(nullary_predicate: Callable, on_true: Variant, on_false: Variant) -> Variant:
+#	return on_true if nullary_predicate.call() else on_false
+
 
 ## (SphereShape3D.new(), BoundBound.setter("radius", 1_000))
 static func with(value: Variant, callable: Callable) -> Variant: callable.call(value); return value
@@ -447,7 +473,7 @@ static func shift_property_clamped(object: Object, property: StringName, min_val
 static func is_same_typed(value: Variant, ...values: Array) -> bool: return values.map(typeof).all(is_same.bind(typeof(value)))# if values else true
 
 
-static func is_number(what: Variant) -> bool: return typeof(what) in [TYPE_FLOAT, TYPE_INT]
+static func is_number(what: Variant) -> bool: return what is int or what is float # typeof(what) in [TYPE_FLOAT, TYPE_INT]
 
 
 static func is_vector(what: Variant) -> bool: return typeof(what) in [
@@ -480,16 +506,17 @@ func schlick_bias(x: float, curvature: float) -> float:
 	return (curvature * x) / denominator if not is_zero_approx(denominator) else x
 
 
-
-static func lerp3(a: Variant, b: Variant, c: Variant, weight: float) -> float:
-	var clamped_weight: float = clampf(weight, 0.0, 1.0)
-	return lerp(a, b, clamped_weight * 2.0) if clamped_weight < 0.5 else lerp(b, c, clamped_weight * 2.0 - 1.0)
-
-
 ## Arrays.safe_reduce([...], Funcs.zip_3d.bind(minf)) -> вектор минимальных компонент
 ## ((0,1,2), (2,1,0), min) => (0,1,0)
-static func zip_3d(a: Vector3, b: Vector3, comparator: Callable) -> Vector3:
-	return Vector3(comparator.call(a.x, b.x), comparator.call(a.y, b.y), comparator.call(a.z, b.z))
+#static func zip_3d(a: Vector3, b: Vector3, comparator: Callable) -> Vector3:
+#	return Vector3(comparator.call(a.x, b.x), comparator.call(a.y, b.y), comparator.call(a.z, b.z))
+static func zip_3d(comparator: Callable, ...vectors: Array) -> Vector3: return zipv_3d(comparator, vectors)
+static func zipv_3d(comparator: Callable, vectors: Array[Vector3]) -> Vector3:
+	return Vector3(
+		comparator.call(vectors.map(func(v): return v.x)),
+		comparator.call(vectors.map(func(v): return v.y)),
+		comparator.call(vectors.map(func(v): return v.z))
+	)
 
 
 static func vector3_wrap(value: Vector3, min_value: Vector3, max_value: Vector3) -> Vector3:
@@ -608,15 +635,20 @@ static func clamp_distance_3d(a: Vector3, b: Vector3, min_distance: float, max_d
 	#return a if is_zero_approx(length) else b + b.direction_to(a) * clampf(length, min_distance, max_distance)
 
 
-static func get_noise_gradient(noise: Noise, point: Vector3, delta: float = 0.01) -> Vector3:
+static func get_noise_gradient_2d(noise: Noise, point: Vector2, delta: float = 0.01) -> Vector2:
+	if not noise or is_zero_approx(delta): return Vector2.ZERO
+	var base_noise := noise.get_noise_2dv(point)
+	var grad_x := noise.get_noise_2dv(point + Vector2(delta, 0)) - base_noise
+	var grad_y := noise.get_noise_2dv(point + Vector2(0, delta)) - base_noise
+	return Vector2(grad_x, grad_y) / delta
+
+
+static func get_noise_gradient_3d(noise: Noise, point: Vector3, delta: float = 0.01) -> Vector3:
 	if not noise or is_zero_approx(delta): return Vector3.ZERO
-	
 	var base_noise := noise.get_noise_3dv(point)
-	
 	var grad_x := noise.get_noise_3dv(point + Vector3(delta, 0, 0)) - base_noise
 	var grad_y := noise.get_noise_3dv(point + Vector3(0, delta, 0)) - base_noise
 	var grad_z := noise.get_noise_3dv(point + Vector3(0, 0, delta)) - base_noise
-	
 	return Vector3(grad_x, grad_y, grad_z) / delta
 
 
@@ -630,28 +662,35 @@ static func glerpf(a: float, b: float, weight: float) -> float:
 	return a * pow(b / a, weight)
 
 
-static func lerp_2d(a: Vector2, b: Vector2, weight: Vector2) -> Vector2:
+
+static func lerp3(a: Variant, b: Variant, c: Variant, weight: float) -> float:
+	var clamped_weight: float = clampf(weight, 0.0, 1.0)
+	return lerp(a, b, clamped_weight * 2.0) if clamped_weight < 0.5 else lerp(b, c, clamped_weight * 2.0 - 1.0)
+
+
+
+static func component_lerp_2d(a: Vector2, b: Vector2, weight: Vector2) -> Vector2:
 	return Vector2(lerpf(a.x, b.x, weight.x), lerpf(a.y, b.y, weight.y))
 
 
-static func lerp_3d(a: Vector3, b: Vector3, weight: Vector3) -> Vector3:
+static func component_lerp_3d(a: Vector3, b: Vector3, weight: Vector3) -> Vector3:
 	return Vector3(lerpf(a.x, b.x, weight.x), lerpf(a.y, b.y, weight.y), lerpf(a.z, b.z, weight.z))
 
 
 # b + (a - b) * exp(-decay * delta)
-# Critically Damped Spring
-# Frame-rate independent Lerp
-static func exp_decay_f(a: float, b: float, delta: float) -> float: return lerp(a, b, 1.0 - exp(-delta))
-static func exp_decay_v2(a: Vector2, b: Vector2, delta: float) -> Vector2: return a.lerp(b, 1.0 - exp(-delta))
-static func exp_decay_v3(a: Vector3, b: Vector3, delta: float) -> Vector3: return a.lerp(b, 1.0 - exp(-delta))
+# frame-rate independent lerp
+# Useful for critically damped spring
+static func exp_decay(a: float, b: float, delta: float) -> float: return lerpf(a, b, 1.0 - exp(-delta))
+static func exp_decay_2d(a: Vector2, b: Vector2, delta: float) -> Vector2: return a.lerp(b, 1.0 - exp(-delta))
+static func exp_decay_3d(a: Vector3, b: Vector3, delta: float) -> Vector3: return a.lerp(b, 1.0 - exp(-delta))
 
 
 # hookes_law_f:
-#static func damped_spring_f(displacement: float, current_velocity: float, stiffness: float, damping: float) -> float:
+#static func damped_spring_force_f(displacement: float, current_velocity: float, stiffness: float, damping: float) -> float:
 	#return (stiffness * displacement) - (damping * current_velocity)
 
-# hookes_law_v3:
-static func damped_spring_3d(displacement: Vector3, current_velocity: Vector3, stiffness: float, damping: float) -> Vector3:
+# hookes_law_3d:
+static func damped_spring_force_3d(displacement: Vector3, current_velocity: Vector3, stiffness: float, damping: float) -> Vector3:
 	return (stiffness * displacement) - (damping * current_velocity)
 
 
@@ -694,7 +733,7 @@ static func interpolate_resources(a: Resource, b: Resource, ratio: float, interp
 	if a and not b: return a
 	if b and not a: return b
 	
-	var resource_property_names: PackedStringArray = ClassDB.class_get_property_list("Resource").map(Bound.getter("name"))
+	var resource_property_names: PackedStringArray = ClassDB.class_get_property_list("Resource").map(Bound.bound_get("name"))
 	var property_names: PackedStringArray = Array(get_object_property_names(a)).filter(Bound.not_inside(resource_property_names))
 	var result := a.duplicate()
 	
@@ -1185,7 +1224,8 @@ static func curve_sample_baked(curve: Curve, offset: float, default: float = 0.0
 	return curve.sample_baked(offset) if curve else default
  
 
-
+static func script_path_join(script: Script, path: String) -> String:
+	return script.resource_path.get_base_dir().path_join(path)
 
 
 #endregion Data ################################################################

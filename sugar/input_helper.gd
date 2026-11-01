@@ -48,6 +48,9 @@ static func is_action_long_pressed(action: StringName, threshold: float = 0.25) 
 	return false
 
 
+#static func is_any_action_pressed(event: InputEvent, actions: Array) -> void:
+#	return actions.any(event.is_action_pressed)
+
 
 
 #static func is_action_multiple_pressed(action: StringName, count: int = 2, timeout: float = 0.5) -> bool

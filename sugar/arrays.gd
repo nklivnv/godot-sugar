@@ -4,22 +4,6 @@ extends Object
 class_name Arrays
 
 
-
-static func is_index_valid(array: Variant, index: int) -> bool:
-	var length: int = len(array)
-	return index >= -length and index < length
-
-
-static func get_or(array: Variant, index: int, default: Variant = null) -> Variant:
-	return array[index] if Utils.is_array(array) and is_index_valid(array, index) else default
-
-
-static func set_with_resize(array: Variant, index: int, value: Variant, default: Variant = null) -> void:
-	assert(Utils.is_array(array))
-	if not is_index_valid(array, index): resize(array, index + 1, default)
-	array[index] = value
-
-
 static func empty() -> Array: return []
 static func filled_custom(length: int, constructor: Callable) -> Array: return range(length).map(constructor.unbind(1))
 static func filled(length: int, value: Variant = null) -> Array:
@@ -27,6 +11,19 @@ static func filled(length: int, value: Variant = null) -> Array:
 	array.resize(length)
 	if value != null: array.fill(value)
 	return array
+
+
+static func assigned(array: Array, ...arrays: Array) -> Array:
+	var duplicate: Array = array.duplicate()
+	for a: Array in arrays:
+		duplicate.assign(a)
+	return duplicate
+
+
+static func reversed(array: Array) -> Array:
+	var duplicate := array.duplicate()
+	duplicate.reverse()
+	return duplicate
 
 
 static func resize(array: Variant, length: int, default: Variant = null) -> void:
@@ -44,21 +41,32 @@ static func resized(array: Array, length: int, default: Variant = null) -> Array
 	return duplicate
 
 
-static func reversed(array: Array) -> Array:
-	var duplicate := array.duplicate()
-	duplicate.reverse()
-	return duplicate
+static func resize_indexed(array: Array, length: int, index_constructor: Callable) -> void:
+	var old_length: int = len(array)
+	array.resize(length)
+	for i in range(old_length, length):
+		array[i] = index_constructor.call(i)
 
 
 static func resize_custom(array: Array, length: int, constructor: Callable) -> void:
 	resize_indexed(array, length, constructor.unbind(1))
 
 
-static func resize_indexed(array: Array, length: int, index_constructor: Callable) -> void:
+static func scale(array: Array, multiplier: float = 1.0) -> void:
 	var old_length: int = len(array)
-	array.resize(length)
-	for i in range(old_length, length):
-		array[i] = index_constructor.call(i)
+	var new_length: int = floori(old_length * absf(multiplier))
+	
+	if old_length == 0 or is_zero_approx(multiplier) or new_length <= 0:
+		array.clear()
+	else:
+		if multiplier < 0: array.reverse()
+		resize_indexed(array, new_length, func(i: int) -> Variant: return array[wrapi(i, 0, old_length)])
+
+
+static func scaled(array: Array, multiplier: float = 1) -> Array:
+	var duplicate: Array = array.duplicate()
+	scale(duplicate, multiplier)
+	return duplicate
 
 
 static func repeat(array: Array, repeats: int = 1) -> Array:
@@ -74,31 +82,6 @@ static func repeat(array: Array, repeats: int = 1) -> Array:
 		result.append_array(source)
 	return result
 
- 
-static func scale(array: Array, multiplier: float = 1.0) -> void:
-	var old_length: int = len(array)
-	var new_length: int = floori(old_length * absf(multiplier))
-	
-	if old_length == 0 or is_zero_approx(multiplier) or new_length <= 0:
-		array.clear()
-		return
-	
-	if multiplier < 0: array.reverse()
-	resize_indexed(array, new_length, func(i: int) -> Variant: return array[wrapi(i, 0, old_length)])
-
-
-static func scaled(array: Array, multiplier: float = 1) -> Array:
-	var duplicate: Array = array.duplicate()
-	scale(duplicate, multiplier)
-	return duplicate
-
-
-static func assigned(array: Array, ...arrays: Array) -> Array:
-	var duplicate: Array = array.duplicate()
-	for a: Array in arrays:
-		duplicate.assign(a)
-	return duplicate
-
 
 static func sorted(array: Array) -> Array:
 	var duplicate: Array = array.duplicate()
@@ -110,16 +93,31 @@ static func without(array: Array, exceptions: Array) -> Array:
 	return Array(array.filter(Operator.not_inside.bind(exceptions)), array.get_typed_builtin(), array.get_typed_class_name(), array.get_typed_script())
 
 
-static func filtered(array: Array, predicate: Callable, inverse: bool = false) -> Array:
-	return array.filter(predicate) if not inverse else array.filter(func(i: Variant) -> bool: return not predicate.call(i))
+static func filtered(array: Array, predicate: Callable, inverted: bool = false) -> Array:
+	return array.filter(Bound.negate(predicate) if inverted else predicate)
 
 
 ## ({name = 1}, {name = 2}, {name = 3}, "name", Operator.is_equal.bind(2)) => [{name = 2}]
-static func key_filtered(array: Array, key: Variant, predicate: Callable, inverse: bool = false) -> Array:
-	return array.filter(_key_filtered_match_key.bind(key, predicate, inverse))
+static func key_filtered(array: Array, key: Variant, predicate: Callable, inverted: bool = false) -> Array:
+	return array.filter(_key_filtered_match_key.bind(key, predicate, inverted))
 
-static func _key_filtered_match_key(item: Variant, key: Variant, predicate: Callable, inverse: bool) -> bool:
-	return predicate.call(item.get(key)) != inverse
+static func _key_filtered_match_key(item: Variant, key: Variant, predicate: Callable, inverted: bool) -> bool:
+	return bool(predicate.call(item.get(key))) != inverted
+
+
+static func is_index_valid(array: Variant, index: int) -> bool:
+	var length: int = len(array)
+	return index >= -length and index < length
+
+
+static func get_or(array: Variant, index: int, default: Variant = null) -> Variant:
+	return array[index] if Utils.is_array(array) and is_index_valid(array, index) else default
+
+
+static func set_with_resize(array: Variant, index: int, value: Variant, default: Variant = null) -> void:
+	assert(Utils.is_array(array))
+	if not is_index_valid(array, index): resize(array, index + 1, default)
+	array[index] = value
 
 
 ## Применяет преобразование только только к прошедшим проверку элементам
@@ -129,13 +127,14 @@ static func map_if(array: Array, converter: Callable, predicate: Callable, negat
 
 
 static func counts(array: Array) -> Dictionary[Variant, int]:
-	var _unique: Array = unique(array)
-	return Dicts.create(_unique, _unique.map(array.count))
+	var keys: Array[Variant] = unique(array)
+	var values: Array[int] = Array(keys.map(array.count), TYPE_INT, "", null)
+	return Dicts.create(keys, values)
 
 
 static func avg_weighted(values: Array, weights: PackedFloat32Array) -> Variant:
 	if len(values) == 1: return values[0]
-	return sum(muls(values, weights)) / sumf(weights)
+	return dot(values, weights) / sumf(weights)
 
 
 # [-1, 0, 1] -> [0, 0.333, 0.667]
@@ -195,6 +194,8 @@ static func avgf(array: PackedFloat32Array) -> float: return sumf(array) / len(a
 static func avg_2d(array: PackedVector2Array) -> Vector2: return sum_2d(array) / len(array)
 static func avg_3d(array: PackedVector3Array) -> Vector3: return sum_3d(array) / len(array)
 
+static func dot(...vectors: Array) -> float: return sumf(zip_map(vectors, Operator.mulf, false, 0.0))
+
 
 static func interpolate(values: Array, normalized_weight: float, interpolator: Callable = lerp, wrap_mode: bool = false) -> Variant:
 	var length: int = len(values)
@@ -226,20 +227,12 @@ static func interpolate_weighted(values: Array, weights: PackedFloat32Array, nor
 	
 	normalized_weight = wrapf(normalized_weight, 0.0, 1.0) if wrap_mode else clampf(normalized_weight, 0.0, 1.0)
 	
-	var weighted_sum: Variant = sum(muls(values, weight_fractions))
+	var weighted_sum: Variant = sum(zip_map([values, weight_fractions], Operator.mul))
 	return interpolator.call(values[0], weighted_sum, normalized_weight)
 
 
-#static func interpolate_lengthed(values: Array, lengths: PackedFloat32Array, normalized_weight: float, interpolator: Callable = lerpf, wrap_mode: bool = false) -> Variant:
-	#var length: int = len(values)
-
-static func interpolate_arrays(
-	arrays: Array, 
-	weights: PackedFloat32Array, 
-	interpolator: Callable = lerp, 
-	default_value: Variant = 0.0, 
-	default_weight: float = 0.0
-) -> Array:
+# WARNING: ПРЕРЕПИСАТЬ!!!
+static func interpolate_arrays(arrays: Array, weights: PackedFloat32Array, interpolator: Callable = lerp, default_value: Variant = 0.0, default_weight: float = 0.0) -> Array:
 	# 1. Фильтруем валидные массивы
 	var valid_arrays: Array = arrays.filter(func(a: Variant) -> bool: return Utils.is_array(a) and not a.is_empty())
 	if valid_arrays.is_empty(): 
@@ -254,9 +247,9 @@ static func interpolate_arrays(
 			acc_w += w
 			steps.append(w / acc_w if acc_w > 0.0 else 0.5)
 
-	# 3. Схлопываем через zip_with. 
+	# 3. Схлопываем
 	# Используем синтаксис ...items для приема переменного числа аргументов
-	return zip_with(valid_arrays, func(...items: Array) -> Variant:
+	return zip_map(valid_arrays, func(...items: Array) -> Variant:
 		return range(1, items.size()).reduce(
 			func(blend: Variant, idx: int) -> Variant: 
 				return interpolator.call(blend, items[idx], steps[idx]), 
@@ -265,12 +258,11 @@ static func interpolate_arrays(
 
 
 
-static func shifted_from(array: Array, from: int, offset: int = 1) -> Variant:
-	return array[wrapi(from + offset, 0, len(array))] if array else null
+static func shifted_from_index(array: Array, from: int, offset: int = 1, wrap_mode = true) -> Variant:
+	return array.get(wrapi(from + offset, 0, len(array)) if wrap_mode else clampi(from + offset, 0, len(array)))
 
-
-static func shifted(array: Array, value: Variant, offset: int = 1) -> Variant:
-	return shifted_from(array, array.find(value), offset)
+static func shifted_from_value(array: Array, value: Variant, find_from: int = 0, offset: int = 1, wrap_mode: bool = true) -> Variant:
+	return shifted_from_index(array, find(array, value, find_from, wrap_mode), offset, wrap_mode)
 
 
 static func has_sub_sequence(seq: Array, sub_seq: Array) -> bool: return is_sub_sequence(sub_seq, seq)
@@ -284,93 +276,15 @@ static func is_sub_sequence(sub_seq: Array, seq: Array) -> bool:
 
 #region ELEMENTWISE ############################################################
 
-
-## Поэлементное сложение
-static func addsf(a: PackedFloat32Array, b: PackedFloat32Array, shortest_array: bool = false, default_value: float = 0.0) -> PackedFloat32Array:
-	
-	var a_length: int = len(a)
-	var b_length: int = len(b)
-	
-	var result_length: int = mini(a_length, b_length) if shortest_array else maxi(a_length, b_length)
-	var c: PackedFloat32Array
-	c.resize(result_length)
-	
-	for i in len(c):
-		var a_value: float = a[i] if i < a_length else default_value
-		var b_value: float = b[i] if i < b_length else default_value
-		c[i] = a_value + b_value
-	
-	return c
-
-
-## Поэлементное перемножение
-static func muls(a: Array, b: Array, shortest_length: bool = false) -> Array:
-	return range(mini(len(a), len(b)) if shortest_length else maxi(len(a), len(b))).map(func(i: int) -> Variant: return a[i] * b[i])
-
-
-
-static func mulsf(a: PackedFloat32Array, b: PackedFloat32Array, shortest_length: bool = false, default_value: float = 1.0) -> PackedFloat32Array:
-	
-	var a_length: int = len(a)
-	var b_length: int = len(b)
-	
-	var result_length: int = mini(a_length, b_length) if shortest_length else maxi(a_length, b_length)
-	var c: PackedFloat32Array
-	c.resize(result_length)
-	
-	for i in len(c):
-		var a_value: float = a[i] if i < a_length else default_value
-		var b_value: float = b[i] if i < b_length else default_value
-		c[i] = a_value * b_value
-	
-	return c
-
-
-#static func lerpsf(array: PackedFloat32Array, normalized_weight: float, wrap_mode: bool = false) -> float:
-	#if not array:
-		#printerr("Arrays.lerpfs(...) - array.is_empty() != false")
-		#return NAN
-	#
-	#if len(array) == 1:
-		#return array[0]
-	#
-	#normalized_weight = wrapf(normalized_weight, 0, 1) if wrap_mode else clampf(normalized_weight, 0, 1)
-	#
-	#var i := int(normalized_weight * (len(array) - 1))
-	#var a: float = array[i]
-	#var b: float = array[i+1] if i+1 < len(array) else array[0]
-	#
-	#var lerp_weight: float = normalized_weight * (len(array) - 1) - i
-	#return lerpf(a, b, lerp_weight)
-
-
-#static func lerps_3d(array: PackedVector3Array, normalized_weight: float, wrap_mode: bool = false) -> Vector3:
-	#if not array:
-		#printerr("Arrays.lerps_3d(...) - array.is_empty() =! false")
-		#return Vector3.INF
-	#
-	#if len(array) == 1:
-		#return array[0]
-	#
-	#normalized_weight = wrapf(normalized_weight, 0, 1) if wrap_mode else clampf(normalized_weight, 0, 1)
-	#
-	#var i := int(normalized_weight * (len(array) - 1))
-	#
-	#var a: Vector3 = array[i]
-	#var b: Vector3 = array[i+1] if i+1 < len(array) else array[0]
-	#
-	#var lerp_weight: float = normalized_weight * (len(array) - 1) - i
-	#return a.lerp(b, lerp_weight)
-
-
 ## ([0,3], [3,2,1], min, false, 0) => [0,1,0]
-static func zip_with(arrays: Array, function: Callable, shortest_length: bool = false, default_value: Variant = null) -> Array:
+# zip_with, zip_map, elementwise
+static func zip_map(arrays: Array[Array], function: Callable, shortest_length: bool = false, default_value: Variant = null) -> Array:
 	return [] if arrays.is_empty() else range(arrays.map(len).reduce(mini if shortest_length else maxi)).map(
 		func(i: int) -> Variant: return function.callv(arrays.map(
-			func(arr: Array) -> Variant: return arr[i] if i < len(arr) else default_value)))
+			func(array: Array) -> Variant: return array[i] if i < len(array) else default_value)))
 
 
-static func vector_length_squared(array: Array[float]) -> float: return sumf(mulsf(array, array))
+static func vector_length_squared(vector: Array[float]) -> float: return dot(vector, vector)
 static func vector_length(array: Array[float]) -> float: return sqrt(vector_length_squared(array))
 
 static func vector_normalized(vector: PackedFloat32Array) -> PackedFloat32Array:
@@ -602,18 +516,16 @@ static func flatten(array: Array, recursive: bool = true) -> Array:
 #endregion STRUCTURES ##########################################################
 #region OTHER ##################################################################
 
-
 static func cosine_similarities(a: PackedFloat32Array, b: PackedFloat32Array) -> float:
 	
 	if len(a) != len(b):
 		printerr("Arrays.cosine_similarity: len(a) != len(b)")
 		return NAN
 	
-	var dot: float = sumf(mulsf(a, b))
 	var magnitude_a: float = vector_length(a)
 	var magnitude_b: float = vector_length(b)
 	
-	return dot / (magnitude_a * magnitude_b) if magnitude_a > 0 and magnitude_b > 0 else 0.0
+	return dot(a, b) / (magnitude_a * magnitude_b) if magnitude_a > 0 and magnitude_b > 0 else 0.0
 
 
 static func has_sequence(owner: Array, sequence: Array) -> bool:
