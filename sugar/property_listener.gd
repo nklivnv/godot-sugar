@@ -89,11 +89,12 @@ static func _execute_callback(object: Object, property: StringName, data: Listen
 	if data.flags & Flags.APPEND_PROPERTY: final_callback = final_callback.bind(property)
 	if data.flags & Flags.APPEND_OBJECT:   final_callback = final_callback.bind(object)
 	
-	if data.flags & Flags.DEFERRED: final_callback.call_deferred()
-	else:                           final_callback.call()
+	if data.flags & Flags.DEFERRED:        final_callback.call_deferred()
+	else:                                  final_callback.call()
 
 
-static func call_on_changed(object: Object, property: StringName, callback: Callable, flags: Flags = 0) -> void:
+# call_on_changed
+static func register(object: Object, property: StringName, callback: Callable, flags: Flags = 0) -> void:
 	if not is_instance_valid(object): return
 	
 	var instance_id: int = object.get_instance_id()
@@ -114,6 +115,11 @@ static func call_on_changed(object: Object, property: StringName, callback: Call
 	data.flags = flags
 	
 	listeners.append(data)
+
+
+static func register_until(disconnection_signal: Signal, object: Object, property: StringName, callback: Callable, flags: Flags = 0) -> void:
+	register(object, property, callback, flags)
+	disconnection_signal.connect(erase.bind(object, property, callback, flags), CONNECT_ONE_SHOT)
 
 
 static func erase(object: Object, property: StringName, callback: Callable = Callable()) -> void:

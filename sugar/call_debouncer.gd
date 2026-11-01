@@ -6,6 +6,10 @@ var _callable: Callable
 var _requested: bool
 
 
+static func call_on_signal(callable: Callable, call_signal: Signal) -> void:
+	if not call_signal.is_connected(callable): call_signal.connect(callable, CONNECT_ONE_SHOT)
+
+
 static func create_with_signals(callable: Callable, request_signal: Signal, try_call_signal: Signal) -> CallDebouncer:
 	var debouner := CallDebouncer.new(callable)
 	request_signal.connect(debouner.request)
