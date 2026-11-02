@@ -63,8 +63,8 @@ static func randi_range_avoids(a: int, b: int, avoids: PackedInt32Array, default
 
 # --- 2D ---
 
-static func randf_range_2d(a: Vector2, b: Vector2) -> Vector2: return Vector2(randi_range(a.x, b.x), randi_range(a.y, b.y))
-static func randi_range_2d(a: Vector2i, b: Vector2i) -> Vector2i: return Vector2i(randi_range(a.x, b.x), randi_range(a.y, b.y))
+static func rand2f_range(a: Vector2, b: Vector2) -> Vector2: return Vector2(randi_range(a.x, b.x), randi_range(a.y, b.y))
+static func rand2i_range(a: Vector2i, b: Vector2i) -> Vector2i: return Vector2i(randi_range(a.x, b.x), randi_range(a.y, b.y))
 
 
 static func rand_on_circle() -> Vector2:
@@ -89,18 +89,18 @@ static func rand_in_triangle_2d(o: Vector2, a: Vector2, b: Vector2) -> Vector2:
 
 # --- 3D ---
 
-static func randv3() -> Vector3: return Vector3(randf(), randf(), randf())
+static func rand3f() -> Vector3: return Vector3(randf(), randf(), randf())
 
 
-static func randv3_centered(size := Vector3.ONE) -> Vector3:
+static func rand3f_centered(size := Vector3.ONE) -> Vector3:
 	return size * (Vector3(randf(), randf(), randf()) - Vector3.ONE * 0.5)
 
 
-static func randv3_range(a := -Vector3.ONE, b := Vector3.ONE) -> Vector3:
+static func rand3f_range(a := -Vector3.ONE, b := Vector3.ONE) -> Vector3:
 	return Vector3(randf_range(a.x, b.x), randf_range(a.y, b.y), randf_range(a.z, b.z))
 
 
-static func randv3i_range(min: Vector3i, max: Vector3i) -> Vector3i:
+static func rand3i_range(min: Vector3i, max: Vector3i) -> Vector3i:
 	return Vector3i(randi_range(min.x, max.x), randi_range(min.y, max.y), randi_range(min.z, max.z))
 
 
@@ -143,7 +143,7 @@ static func rand_in_sphere_uniform(min_radius: float = 0.0, max_radius: float = 
 #static func rand_in_sphere_exp(min_radius: float = 0.0, max_radius: float = 1.0) -> Vector3:
 	#return rand_on_sphere() * log(randf_range(exp(min_radius), exp(max_radius)))
 
-static func rand_in_sphere_exp2(min_radius: float = 0.0, max_radius: float = 1.0, min_density: float = 1.0, max_density: float = 0.0) -> Vector3:
+static func rand_in_sphere_exp(min_radius: float = 0.0, max_radius: float = 1.0, min_density: float = 1.0, max_density: float = 0.0) -> Vector3:
 	var a := remap(min_radius, max_density, min_density, 0.0, 3.0)
 	var b := remap(max_radius, max_density, min_density, 0.0, 3.0)
 	var t := -log(randf_range(exp(-a), exp(-b)))
@@ -162,7 +162,7 @@ static func rand_in_sphere_linear2(min_radius: float = 0.0, max_radius: float = 
 
 
 
-static func rand_in_box(size := Vector3.ONE) -> Vector3: return randv3_centered(size)
+static func rand_in_box(size := Vector3.ONE) -> Vector3: return rand3f_centered(size)
 
 
 static func rand_on_box(size: Vector3 = Vector3.ONE) -> Vector3:
@@ -175,7 +175,7 @@ static func rand_on_box(size: Vector3 = Vector3.ONE) -> Vector3:
 
 
 static func rand_in_box_border(min_size: Vector3 = -Vector3.ONE, max_size: Vector3 = Vector3.ONE) -> Vector3:
-	var size: Vector3 = randv3_range(min_size, max_size)
+	var size: Vector3 = rand3f_range(min_size, max_size)
 	var half: Vector3 = size / 2.0
 	var side: float = [-1.0, 1.0].pick_random()
 	match randi() % 3:

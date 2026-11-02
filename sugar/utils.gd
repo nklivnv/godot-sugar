@@ -999,7 +999,7 @@ static func polyline_snapped(polyline: PackedVector3Array, step: Vector3, first_
 		var delta_pos: Vector3 = grid_end - grid_start
 		
 		var grid_step: Vector3 = delta_pos.sign() * step
-		var axis_steps: Vector3 = Operator.safe_div_3d(delta_pos, step, Vector3.ZERO).abs()
+		var axis_steps: Vector3 = Operator.safe_div3f(delta_pos, step, Vector3.ZERO).abs()
 		
 		var total_steps: int = int(axis_steps.x + axis_steps.y + axis_steps.z)
 		
