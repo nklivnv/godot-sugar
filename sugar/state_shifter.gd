@@ -47,7 +47,7 @@ func shift(offset: int = 1, skip_equals: bool = true, from_index: int = state) -
 
 func shift_from_value(what: Variant, offset: int = 1, skip_equals: bool = true, from_index: int = state, default_index: int = from_index) -> void:
 	if not states: state = -1; return
-	var found_index: int = Arrays.find(states, what, from_index, true)
+	var found_index: int = Arrays.find_wrapped(states, what, from_index)
 	shift(offset, skip_equals, default_index if found_index == -1 else found_index)
 
 

@@ -45,7 +45,7 @@ static func pipev(callables: Array[Callable], args: Array = []) -> Variant:
 
 # --- COLLECTIONS ---
 
-## objects.filter(Operator.at.bind("name", Operator.equal.bind("my_name"))
+## objects.filter(Operator.at.bind("name", Operator.is_equal.bind("my_name"))
 ## object.get_property_list().filter(Operator.at.bind("name", ["name_1", "name_2"].has)))
 static func at(container: Variant, key: Variant, callable: Callable) -> Variant: return callable.call(container.get(key))
 

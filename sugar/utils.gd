@@ -686,8 +686,8 @@ static func exp_decay_3d(a: Vector3, b: Vector3, delta: float) -> Vector3: retur
 
 
 # hookes_law_f:
-#static func damped_spring_force_f(displacement: float, current_velocity: float, stiffness: float, damping: float) -> float:
-	#return (stiffness * displacement) - (damping * current_velocity)
+static func damped_spring_force(displacement: float, current_velocity: float, stiffness: float, damping: float) -> float:
+	return (stiffness * displacement) - (damping * current_velocity)
 
 # hookes_law_3d:
 static func damped_spring_force_3d(displacement: Vector3, current_velocity: Vector3, stiffness: float, damping: float) -> Vector3:

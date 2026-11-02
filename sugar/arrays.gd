@@ -13,11 +13,8 @@ static func filled(length: int, value: Variant = null) -> Array:
 	return array
 
 
-static func assigned(array: Array, ...arrays: Array) -> Array:
-	var duplicate: Array = array.duplicate()
-	for a: Array in arrays:
-		duplicate.assign(a)
-	return duplicate
+static func typed(array: Array, reference: Array) -> Array:
+	return Array(array, reference.get_typed_builtin(), reference.get_typed_class_name(), reference.get_typed_script())
 
 
 static func reversed(array: Array) -> Array:
@@ -90,19 +87,20 @@ static func sorted(array: Array) -> Array:
 
 
 static func without(array: Array, exceptions: Array) -> Array:
-	return Array(array.filter(Operator.not_inside.bind(exceptions)), array.get_typed_builtin(), array.get_typed_class_name(), array.get_typed_script())
+	return typed(array.filter(Operator.not_inside.bind(exceptions)), array)
 
 
 static func filtered(array: Array, predicate: Callable, inverted: bool = false) -> Array:
-	return array.filter(Bound.negate(predicate) if inverted else predicate)
+	return typed(array.filter(Bound.negate(predicate) if inverted else predicate), array)
 
 
+## WARNING: Use Operator.at.bind("name")
 ## ({name = 1}, {name = 2}, {name = 3}, "name", Operator.is_equal.bind(2)) => [{name = 2}]
-static func key_filtered(array: Array, key: Variant, predicate: Callable, inverted: bool = false) -> Array:
-	return array.filter(_key_filtered_match_key.bind(key, predicate, inverted))
+#static func key_filtered(array: Array, key: Variant, predicate: Callable, inverted: bool = false) -> Array:
+#	return array.filter(_key_filtered_match_key.bind(key, predicate, inverted))
 
-static func _key_filtered_match_key(item: Variant, key: Variant, predicate: Callable, inverted: bool) -> bool:
-	return bool(predicate.call(item.get(key))) != inverted
+#static func _key_filtered_match_key(item: Variant, key: Variant, predicate: Callable, inverted: bool) -> bool:
+#	return bool(predicate.call(item.get(key))) != inverted
 
 
 static func is_index_valid(array: Variant, index: int) -> bool:
@@ -123,7 +121,7 @@ static func set_with_resize(array: Variant, index: int, value: Variant, default:
 ## Применяет преобразование только только к прошедшим проверку элементам
 ## ([1,2,3,4], add(10), greater(2)) => [1,2,13,14]
 static func map_if(array: Array, converter: Callable, predicate: Callable, negate: bool = false) -> Array:
-	return array.map(func(item: Variant) -> Variant: return converter.call(item) if predicate.call(item) != negate else item)
+	return typed(array.map(func(item: Variant) -> Variant: return converter.call(item) if predicate.call(item) != negate else item), array)
 
 
 static func counts(array: Array) -> Dictionary[Variant, int]:
@@ -137,7 +135,7 @@ static func avg_weighted(values: Array, weights: PackedFloat32Array) -> Variant:
 	return dot(values, weights) / sumf(weights)
 
 
-# [-1, 0, 1] -> [0, 0.333, 0.667]
+## ([-1, 0, 1]) => [0, 0.333, 0.667]
 static func get_weight_fractions(weights: PackedFloat32Array) -> PackedFloat32Array:
 	if weights.is_empty(): return []
 	var duplicate: Array = Array(weights)
@@ -216,7 +214,7 @@ static func interpolate(values: Array, normalized_weight: float, interpolator: C
 	return interpolator.call(values[index_a], values[index_b], local_weight)
 
 
-# WARNING: 90% - что неправтльно это:
+# WARNING: 90% - что неправтльно:
 static func interpolate_weighted(values: Array, weights: PackedFloat32Array, normalized_weight: float, interpolator: Callable = lerpf, wrap_mode: bool = false) -> Variant:
 	var length: int = len(values)
 	assert(length > 0, "Utils.interpolate_weighted(...) - len(values) > 0 != true")
@@ -262,7 +260,8 @@ static func shifted_from_index(array: Array, from: int, offset: int = 1, wrap_mo
 	return array.get(wrapi(from + offset, 0, len(array)) if wrap_mode else clampi(from + offset, 0, len(array)))
 
 static func shifted_from_value(array: Array, value: Variant, find_from: int = 0, offset: int = 1, wrap_mode: bool = true) -> Variant:
-	return shifted_from_index(array, find(array, value, find_from, wrap_mode), offset, wrap_mode)
+	var index: int = find_wrapped(array, value, find_from) if wrap_mode else array.find(value, find_from)
+	return shifted_from_index(array, find_wrapped(array, value, find_from), offset, wrap_mode)
 
 
 static func has_sub_sequence(seq: Array, sub_seq: Array) -> bool: return is_sub_sequence(sub_seq, seq)
@@ -347,26 +346,28 @@ static func reduce_while(array: Array, reductor: Callable, result_predicate: Cal
 
 
 ## (['a','b','a','b'], 'a', 2, true) => 0
-static func find(array: Array, what: Variant, from: int = 0, cyclic: bool = true) -> int:
+#static func find(array: Array, what: Variant, from: int = 0, cyclic: bool = true) -> int:
+#	var found_index: int = array.find(what, from)
+#	if found_index == -1 and cyclic and from > 0: return array.slice(0, from).find(what)
+#	return found_index
+
+## (['a','b','a','b'], 'a', 2) => 0
+static func find_wrapped(array: Array, what: Variant, from: int = 0) -> int:
 	var found_index: int = array.find(what, from)
-	if found_index == -1 and cyclic and from > 0: return array.slice(0, from).find(what)
+	if found_index == -1 and from > 0: return array.slice(0, from).find(what)
 	return found_index
 
 
-static func find_custom(array: Array, predicate: Callable, from: int = 0, cyclic: bool = true) -> int:
+#static func find_custom(array: Array, predicate: Callable, from: int = 0, cyclic: bool = true) -> int:
+#	var found_index: int = array.find_custom(predicate, from)
+#	if found_index == -1 and cyclic and from > 0: return array.slice(0, from).find_custom(predicate, from)
+#	return found_index
+
+
+static func find_custom_wrapped(array: Array, predicate: Callable, from: int = 0) -> int:
 	var found_index: int = array.find_custom(predicate, from)
-	if found_index == -1 and cyclic and from > 0: return array.slice(0, from).find_custom(predicate, from)
+	if found_index == -1 and from > 0: return array.slice(0, from).find_custom(predicate, from)
 	return found_index
-
-
-static func choose_first(values: Array[Variant], conditions: Array[Callable], default: Variant = null) -> Variant:
-	var value_index: int = conditions.find_custom(func(condition: Callable) -> bool: return condition.call())
-	return values[value_index] if value_index != -1 else default
-
-
-static func choose_first_valid(values: Array[Variant], predicates: Array[Callable], default: Variant = null) -> Variant:
-	var value_index: int = range(len(values)).find_custom(func(i: int) -> bool: return predicates[i].call(values[i]))
-	return values[value_index] if value_index != -1 else default
 
 
 static func find_first(array: Array, predicate: Callable, from: int = 0, default: Variant = null) -> Variant:
@@ -374,8 +375,8 @@ static func find_first(array: Array, predicate: Callable, from: int = 0, default
 	return array[index] if index >= 0 else default
 
 
-static func find_first_cyclic(array: Array, predicate: Callable, from: int = 0, default: Variant = null) -> Variant:
-	var index: int = find_custom(array, predicate, from, true)
+static func find_first_wrapped(array: Array, predicate: Callable, from: int = 0, default: Variant = null) -> Variant:
+	var index: int = find_custom_wrapped(array, predicate, from)
 	return array[index] if index >= 0 else default
 
 
@@ -407,6 +408,19 @@ static func find_index(array: Array, comparator: Callable) -> int:
 		func(best: int, i: int) -> int: return i if comparator.call(array[i], array[best]) else best, 0)
 
 
+static func choose_first(values: Array[Variant], conditions: Array[Callable], default: Variant = null) -> Variant:
+	var value_index: int = conditions.find_custom(func(condition: Callable) -> bool: return condition.call())
+	return values[value_index] if value_index != -1 else default
+
+
+static func choose_first_valid(values: Array[Variant], predicates: Array[Callable], default: Variant = null) -> Variant:
+	var value_index: int = range(len(values)).find_custom(func(i: int) -> bool: return predicates[i].call(values[i]))
+	return values[value_index] if value_index != -1 else default
+
+
+
+
+
 static func take_while(array: Array, predicate: Callable, deep: bool = false) -> Array:
 	for i in len(array):
 		if not predicate.call(array[i]):
@@ -432,8 +446,8 @@ static func take_skip(array: Array, take: int, skip: int) -> Array:
 
 ## ([1,2], add.bind(1), mul.bind(2)) -> [1,2].map(add.bind(1)).map(mul.bind(2))
 static func map(array: Array, ...functions: Array) -> Array:
-	return array.map(func(item: Variant) -> Variant:
-		return functions.reduce(func(acc: Variant, f: Callable): return f.call(acc), item))
+	return typed(array.map(func(item: Variant) -> Variant:
+		return functions.reduce(func(acc: Variant, f: Callable): return f.call(acc), item)), array)
 
 
 ## (0, 10, 5, 1)	=> [5, 6, 7, 8, 9, 0, 1, 2, 3, 4]

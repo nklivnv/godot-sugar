@@ -13,9 +13,9 @@ static func disconnect_object(object: Object, signal_name: StringName, callback:
 		object.disconnect(signal_name, callback)
 
 static func reconnect_object(object: Object, signal_name: StringName, callback: Callable, flags: ConnectFlags = 0) -> void:
-	swap_object(object, object, signal_name, callback)
+	replace_object(object, object, signal_name, callback)
 
-static func swap_object(old: Object, new: Object, signal_name: StringName, callback: Callable, flags: ConnectFlags = 0) -> void:
+static func replace_object(old: Object, new: Object, signal_name: StringName, callback: Callable, flags: ConnectFlags = 0) -> void:
 	disconnect_object(old, signal_name, callback)
 	connect_object(new, signal_name, callback, flags)
 
@@ -33,7 +33,7 @@ static func connect_objects(objects: Array, signal_name: StringName, callback: C
 static func disconnect_objects(objects: Array, signal_name: StringName, callback: Callable) -> void:
 	for object: Object in objects: disconnect_object(object, signal_name, callback)
 
-static func swap_objects(old_objects: Array, new_objects: Array, signal_name: StringName, callback: Callable, flags: ConnectFlags = 0) -> void:
+static func replace_objects(old_objects: Array, new_objects: Array, signal_name: StringName, callback: Callable, flags: ConnectFlags = 0) -> void:
 	disconnect_objects(old_objects, signal_name, callback)
 	connect_objects(new_objects, signal_name, callback, flags)
 
@@ -48,9 +48,9 @@ static func disconnect_signal(signal_: Signal, callback: Callable) -> void:
 	if signal_.is_connected(callback): signal_.disconnect(callback)
 
 static func reconnect_signal(signal_: Signal, callback: Callable, flags: ConnectFlags = 0) -> void:
-	swap_signal(signal_, signal_, callback, flags)
+	replace_signal(signal_, signal_, callback, flags)
 
-static func swap_signal(old: Signal, new: Signal, callback: Callable, flags: ConnectFlags = 0) -> void:
+static func replace_signal(old: Signal, new: Signal, callback: Callable, flags: ConnectFlags = 0) -> void:
 	disconnect_signal(old, callback)
 	connect_signal(new, callback, flags)
 
