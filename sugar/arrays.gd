@@ -178,19 +178,19 @@ static func get_sum_normalized(array: PackedFloat32Array, index: int, value: flo
 static func sum(array: Array) -> Variant: return array.slice(1).reduce(Operator.add, array[0])
 static func sumi(array: Array) -> int: return array.reduce(Operator.addi, 0)
 static func sumf(array: Array) -> float: return array.reduce(Operator.addf, 0.0)
-static func sum_2d(array: Array) -> Vector2: return array.reduce(Operator.add_2d, Vector2.ZERO)
-static func sum_3d(array: Array) -> Vector3: return array.reduce(Operator.add_3d, Vector3.ZERO)
+static func sum2f(array: Array) -> Vector2: return array.reduce(Operator.add2f, Vector2.ZERO)
+static func sum3f(array: Array) -> Vector3: return array.reduce(Operator.add3f, Vector3.ZERO)
 
 static func prod(array: Array) -> Variant: return array.slice(1).reduce(Operator.mul, array[0])
 static func prodi(array: Array) -> int: return array.reduce(Operator.muli, 0)
 static func prodf(array: Array) -> float: return array.reduce(Operator.mulf, 0.0)
-static func prod_2d(array: Array) -> Vector2: return array.reduce(Operator.mul_2d, Vector2.ONE)
-static func prod_3d(array: Array) -> Vector3: return array.reduce(Operator.mul_3d, Vector3.ONE)
+static func prod2f(array: Array) -> Vector2: return array.reduce(Operator.mul2f, Vector2.ONE)
+static func prod3f(array: Array) -> Vector3: return array.reduce(Operator.mul3f, Vector3.ONE)
 
 static func avg(array: Array) -> Variant: return sum(array) / len(array)
 static func avgf(array: PackedFloat32Array) -> float: return sumf(array) / len(array)
-static func avg_2d(array: PackedVector2Array) -> Vector2: return sum_2d(array) / len(array)
-static func avg_3d(array: PackedVector3Array) -> Vector3: return sum_3d(array) / len(array)
+static func avg2f(array: Array) -> Vector2: return sum2f(array) / len(array)
+static func avg3f(array: Array) -> Vector3: return sum3f(array) / len(array)
 
 static func dot(...vectors: Array) -> float: return sumf(zip_map(vectors, Operator.mulf, false, 0.0))
 
