@@ -188,7 +188,7 @@ static func prod2f(array: Array) -> Vector2: return array.reduce(Operator.mul2f,
 static func prod3f(array: Array) -> Vector3: return array.reduce(Operator.mul3f, Vector3.ONE)
 
 static func avg(array: Array) -> Variant: return sum(array) / len(array)
-static func avgf(array: PackedFloat32Array) -> float: return sumf(array) / len(array)
+static func avgf(array: Array) -> float: return sumf(array) / len(array)
 static func avg2f(array: Array) -> Vector2: return sum2f(array) / len(array)
 static func avg3f(array: Array) -> Vector3: return sum3f(array) / len(array)
 
@@ -397,7 +397,7 @@ static func find_best(array: Array, comparator: Callable) -> Variant:
 
 
 ## ([$Nearest, $Farthest], func(node: Node3D) -> float: return global_position.get_distance_to(node.global_position), min) -> $Nearest
-static func find_best_keyed(array: Array, converter: Callable, comparator: Callable) -> Variant:
+static func find_best_by(array: Array, converter: Callable, comparator: Callable) -> Variant:
 	var index: int = find_index(array.map(converter), comparator)
 	return array[index] if index >= 0 else null
 
@@ -445,7 +445,7 @@ static func take_skip(array: Array, take: int, skip: int) -> Array:
 
 
 ## ([1,2], add.bind(1), mul.bind(2)) -> [1,2].map(add.bind(1)).map(mul.bind(2))
-static func map(array: Array, ...functions: Array) -> Array:
+static func mapped(array: Array, ...functions: Array) -> Array:
 	return typed(array.map(func(item: Variant) -> Variant:
 		return functions.reduce(func(acc: Variant, f: Callable): return f.call(acc), item)), array)
 
@@ -545,39 +545,6 @@ static func swaps_and_pops(arrays: Array[Array], index: int) -> void:
 
 
 
-
-
-
-
-static func for_each(array: Array, callable: Callable, ...args: Array) -> void:
-	for item: Variant in array:
-		callable.callv([item] + args)
-
-static func call_each(array: Array, method: StringName, ...args: Array) -> void:
-	callv_each(array, method, args)
-
-static func callv_each(array: Array, method: StringName, args: Array = []) -> void:
-	for item: Variant in array:
-		if item is Object and item.has_method(method): item.callv(method, args)
-
-
-static func for_each_if(array: Array, callable: Callable, predicate: Callable) -> void:
-	if not predicate.is_valid(): return
-	for item: Variant in array:
-		if predicate.call(item): callable.call(item)
-
-static func call_each_if(array: Array, method: StringName, predicate: Callable, ...args: Array) -> void:
-	callv_each_if(array, method, predicate, args)
-
-static func callv_each_if(array: Array, method: StringName, predicate: Callable, args: Array = []) -> void:
-	if not predicate.is_valid(): return
-	for item in array:
-		if item is Object and item.has_method(method) and predicate.call(item): item.callv(method, args)
-
-
-static func filtered_for(array: Array, predicate: Callable, callable: Callable) -> void: for_each_if(array, callable, predicate)
-static func filtered_call(array: Array, predicate: Callable, method: StringName, ...args: Array) -> void: callv_each_if(array, method, predicate, args)
-static func filtered_callv_method(array: Array, predicate: Callable, method: StringName, args: Array) -> void: callv_each_if(array, method, predicate, args)
 
 
 ## [code]

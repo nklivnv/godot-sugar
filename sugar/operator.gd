@@ -124,26 +124,26 @@ static func anyv_custom(argument: Variant, predicates: Array[Callable]) -> bool:
 static func add(   a: Variant, b: Variant) -> Variant: return a + b
 static func addi(  a: int,     b: int    ) -> int:     return a + b
 static func addf(  a: float,   b: float  ) -> float:   return a + b
-static func add2f(a: Vector2, b: Vector2) -> Vector2: return a + b
-static func add3f(a: Vector3, b: Vector3) -> Vector3: return a + b
+static func add2f(a: Vector2, b: Vector2) -> Vector2:  return a + b
+static func add3f(a: Vector3, b: Vector3) -> Vector3:  return a + b
 
 static func sub(   a: Variant, b: Variant) -> Variant: return a - b
 static func subi(  a: int,     b: int    ) -> int:     return a - b
 static func subf(  a: float,   b: float  ) -> float:   return a - b
-static func sub2f(a: Vector2, b: Vector2) -> Vector2: return a - b
-static func sub3f(a: Vector3, b: Vector3) -> Vector3: return a - b
+static func sub2f(a: Vector2, b: Vector2) -> Vector2:  return a - b
+static func sub3f(a: Vector3, b: Vector3) -> Vector3:  return a - b
 
 static func mul(   a: Variant, b: Variant) -> Variant: return a * b
 static func muli(  a: int, b: int        ) -> int:     return a * b
 static func mulf(  a: float, b: float    ) -> float:   return a * b
-static func mul2f(a: Vector2, b: Vector2) -> Vector2: return a * b
-static func mul3f(a: Vector3, b: Vector3) -> Vector3: return a * b
+static func mul2f(a: Vector2, b: Vector2) -> Vector2:  return a * b
+static func mul3f(a: Vector3, b: Vector3) -> Vector3:  return a * b
 
 static func div(   a: Variant, b: Variant) -> Variant: return a / b
 static func divi(  a: int,     b: int    ) -> int:     return a / b
 static func divf(  a: float,   b: float  ) -> float:   return a / b
-static func div2f(a: Vector2, b: Vector2) -> Vector2: return a / b
-static func div3f(a: Vector3, b: Vector3) -> Vector3: return a / b
+static func div2f(a: Vector2, b: Vector2) -> Vector2:  return a / b
+static func div3f(a: Vector3, b: Vector3) -> Vector3:  return a / b
 
 static func safe_divi(a: int,   b: int,   default: int   = INF) -> int:   return default if b == 0.0 else (a / b)
 static func safe_divf(a: float, b: float, default: float = INF) -> float: return default if is_zero_approx(b) else (a / b)

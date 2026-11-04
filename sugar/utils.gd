@@ -275,41 +275,47 @@ static func transact(
 	#to.set(to_property, to_value + given)
 
 
-#static func get_resource_or_node(parent: Node, path: NodePath) -> Object:
-#	if not parent: return null
-#	
-#	var found: Array = parent.get_node_and_resource(path)
-#	
-#	var node: Node =         found[0]
-#	var resource: Resource = found[1]
-#	
-#	return resource if resource else node
+static func object_has_indexed(parent: Node, path: NodePath) -> bool:
+	if not parent or path.is_empty(): return false
+	
+	var array: Array            = parent.get_node_and_resource(path)
+	var node: Node              = array[0]
+	var resource: Resource      = array[1]
+	var property_path: NodePath = array[2]
+	
+	var object: Object = resource if resource else node if node else parent
+	if object == parent: property_path = path
+	
+	return (String(property_path).trim_prefix(":").get_slice(":", 0) in object) if property_path else true
+
 
 
 static func object_get_indexed(parent: Node, path: NodePath) -> Variant:
 	if not parent or path.is_empty(): return
-	var found: Array = parent.get_node_and_resource(path)
 	
-	var node: Node              = found[0]
-	var resource: Resource      = found[1]
-	var property_path: NodePath = found[2]
+	var array: Array            = parent.get_node_and_resource(path)
+	var node: Node              = array[0]
+	var resource: Resource      = array[1]
+	var property_path: NodePath = array[2]
 	
-	var object: Object = resource if resource else node
-	return object.get_indexed(property_path) if object and property_path else object
+	var object: Object = resource if resource else node if node else parent
+	if object == parent: property_path = path
+	
+	return object.get_indexed(property_path) if property_path else object
 
 
 static func object_set_indexed(parent: Node, path: NodePath, new: Variant) -> void:
 	if not parent or path.is_empty(): return
-	var found: Array = parent.get_node_and_resource(path)
 	
-	var resource: Resource      = found[1]
-	var property_path: NodePath = found[2]
+	var array: Array            = parent.get_node_and_resource(path)
+	var node: Node              = array[0]
+	var resource: Resource      = array[1]
+	var property_path: NodePath = array[2]
 	
-	if resource and property_path: resource.set_indexed(property_path, new)
-	else:
-		var node: Node = found[0] if found[0] is Node else parent
-		var subnames := path.get_concatenated_subnames()
-		if subnames: node.set_indexed(NodePath(subnames), new)
+	var object: Object = resource if resource else node if node else parent
+	if object == parent: property_path = path
+	
+	if property_path: object.set_indexed(property_path, new)
 
 
 
@@ -685,13 +691,17 @@ static func exp_decay_2d(a: Vector2, b: Vector2, delta: float) -> Vector2: retur
 static func exp_decay_3d(a: Vector3, b: Vector3, delta: float) -> Vector3: return a.lerp(b, 1.0 - exp(-delta))
 
 
-# hookes_law_f:
+
+# hookes_law:
 static func damped_spring_force(displacement: float, current_velocity: float, stiffness: float, damping: float) -> float:
 	return (stiffness * displacement) - (damping * current_velocity)
 
-# hookes_law_3d:
+static func damped_spring_force_2d(displacement: Vector2, current_velocity: Vector2, stiffness: float, damping: float) -> Vector2:
+	return (stiffness * displacement) - (damping * current_velocity)
+
 static func damped_spring_force_3d(displacement: Vector3, current_velocity: Vector3, stiffness: float, damping: float) -> Vector3:
 	return (stiffness * displacement) - (damping * current_velocity)
+
 
 
 static func limit_distance_2d(a: Vector2, b: Vector2, max_distance: float) -> Vector2:
@@ -764,8 +774,40 @@ static func do_while(callable: Callable, predicate: Callable, max_repeats: int =
 	return default
 
 
+static func for_each(array: Array, callable: Callable, ...args: Array) -> void:
+	for item: Variant in array:
+		callable.callv([item] + args)
+
+static func call_each(array: Array, method: StringName, ...args: Array) -> void:
+	callv_each(array, method, args)
+
+static func callv_each(array: Array, method: StringName, args: Array = []) -> void:
+	for item: Variant in array:
+		if item is Object and item.has_method(method): item.callv(method, args)
+
+
+static func for_each_if(array: Array, callable: Callable, predicate: Callable) -> void:
+	if not predicate.is_valid(): return
+	for item: Variant in array:
+		if predicate.call(item): callable.call(item)
+
+static func call_each_if(array: Array, method: StringName, predicate: Callable, ...args: Array) -> void:
+	callv_each_if(array, method, predicate, args)
+
+static func callv_each_if(array: Array, method: StringName, predicate: Callable, args: Array = []) -> void:
+	if not predicate.is_valid(): return
+	for item in array:
+		if item is Object and item.has_method(method) and predicate.call(item): item.callv(method, args)
+
+
+static func filtered_for(array: Array, predicate: Callable, callable: Callable) -> void: for_each_if(array, callable, predicate)
+static func filtered_call(array: Array, predicate: Callable, method: StringName, ...args: Array) -> void: callv_each_if(array, method, predicate, args)
+static func filtered_callv_method(array: Array, predicate: Callable, method: StringName, args: Array) -> void: callv_each_if(array, method, predicate, args)
+
+
 #endregion Iteration ###########################################################
 #region Geometry ###############################################################
+
 
 func is_aabb_in_convex_project(aabb: AABB, planes: Array[Plane]) -> bool:
 	for plane in planes:
