@@ -275,6 +275,13 @@ static func transact(
 	#to.set(to_property, to_value + given)
 
 
+#static func node_path_get_object(parent: Node, path: NodePath) -> Object:
+#	var array: Array       = parent.get_node_and_resource(path)
+#	var node: Node         = array[0]
+#	var resource: Resource = array[1]
+#	return resource if resource else node
+
+
 static func object_has_indexed(parent: Node, path: NodePath) -> bool:
 	if not parent or path.is_empty(): return false
 	
@@ -778,31 +785,24 @@ static func for_each(array: Array, callable: Callable, ...args: Array) -> void:
 	for item: Variant in array:
 		callable.callv([item] + args)
 
-static func call_each(array: Array, method: StringName, ...args: Array) -> void:
-	callv_each(array, method, args)
 
+static func call_each(array: Array, method: StringName, ...args: Array) -> void: callv_each(array, method, args)
 static func callv_each(array: Array, method: StringName, args: Array = []) -> void:
 	for item: Variant in array:
 		if item is Object and item.has_method(method): item.callv(method, args)
 
 
-static func for_each_if(array: Array, callable: Callable, predicate: Callable) -> void:
-	if not predicate.is_valid(): return
+static func for_each_if(array: Array,  callable: Callable, predicate: Callable) -> void: filtered_for(array, predicate, callable)
+static func filtered_for(array: Array, predicate: Callable, callable: Callable) -> void:
 	for item: Variant in array:
 		if predicate.call(item): callable.call(item)
 
-static func call_each_if(array: Array, method: StringName, predicate: Callable, ...args: Array) -> void:
-	callv_each_if(array, method, predicate, args)
 
-static func callv_each_if(array: Array, method: StringName, predicate: Callable, args: Array = []) -> void:
-	if not predicate.is_valid(): return
+static func filtered_call(array: Array, predicate: Callable, method: StringName, ...method_args: Array) -> void: filtered_callv(array, predicate, method, method_args)
+static func filtered_callv(array: Array, predicate: Callable, method: StringName, method_args: Array = []) -> void:
 	for item in array:
-		if item is Object and item.has_method(method) and predicate.call(item): item.callv(method, args)
+		if item is Object and item.has_method(method) and predicate.call(item): item.callv(method, method_args)
 
-
-static func filtered_for(array: Array, predicate: Callable, callable: Callable) -> void: for_each_if(array, callable, predicate)
-static func filtered_call(array: Array, predicate: Callable, method: StringName, ...args: Array) -> void: callv_each_if(array, method, predicate, args)
-static func filtered_callv_method(array: Array, predicate: Callable, method: StringName, args: Array) -> void: callv_each_if(array, method, predicate, args)
 
 
 #endregion Iteration ###########################################################

@@ -22,32 +22,35 @@ static func safe_call(method: StringName, ...args: Array) -> Callable:     retur
 static func safe_callv(method: StringName, args: Array = []) -> Callable:  return lbind(Operator.safe_callv, method, args)# func(object: Object) -> Variant: return Operator.safe_callerv(object, method, args)
 
 
-static func bound_get(key: Variant) -> Callable:                 return Operator.static_get.bind(key)
-static func bound_set(key: Variant, value: Variant) -> Callable: return Operator.static_set.bind(key, value)
+static func getter(container: Variant, key: Variant) -> Callable: return Operator.static_get.bind(container, key)
+static func setter(container: Variant, key: Variant) -> Callable: return func(value: Variant) -> void: container.set(key, value)
 
-static func at(key: Variant, callable: Callable) -> Callable: return Operator.at.bind(key, callable)
+static func bound_get(key: Variant) -> Callable:                  return Operator.static_get.bind(key)
+static func bound_set(key: Variant, value: Variant) -> Callable:  return Operator.static_set.bind(key, value)
+
+static func at(key: Variant, callable: Callable) -> Callable:     return Operator.at.bind(key, callable)
 
 
-static func is_equal(other: Variant) -> Callable:             return Operator.is_equal.bind(other)
+static func is_equal(other: Variant) -> Callable:                 return Operator.is_equal.bind(other)
 
 ## [1,2].all(is_greater(0)) => true
-static func is_greater(other: Variant) -> Callable:           return Operator.is_greater.bind(other)
-static func is_not_greater(other: Variant) -> Callable:       return Operator.is_not_greater.bind(other)
-static func is_less(other: Variant) -> Callable:              return Operator.is_less.bind(other)
-static func is_not_less(other: Variant) -> Callable:          return Operator.is_not_less.bind(other)
+static func is_greater(other: Variant) -> Callable:               return Operator.is_greater.bind(other)
+static func is_not_greater(other: Variant) -> Callable:           return Operator.is_not_greater.bind(other)
+static func is_less(other: Variant) -> Callable:                  return Operator.is_less.bind(other)
+static func is_not_less(other: Variant) -> Callable:              return Operator.is_not_less.bind(other)
 
 ## [1,2].all(inside([1,2,3])) => true
-static func inside(container: Variant) -> Callable:           return Operator.inside.bind(container)
-static func not_inside(container: Variant) -> Callable:       return Operator.not_inside.bind(container)
+static func inside(container: Variant) -> Callable:               return Operator.inside.bind(container)
+static func not_inside(container: Variant) -> Callable:           return Operator.not_inside.bind(container)
 
-static func has(what: Variant) -> Callable:                   return Operator.has.bind(what)
-static func has_property(property: StringName) -> Callable:   return Operator.has_property.bind(property)
-static func not_has(what: Variant) -> Callable:               return Operator.not_has.bind(what)
+static func has(what: Variant) -> Callable:                       return Operator.has.bind(what)
+static func has_property(property: StringName) -> Callable:       return Operator.has_property.bind(property)
+static func not_has(what: Variant) -> Callable:                   return Operator.not_has.bind(what)
 
 
 ## (f1, f2, f3) => { f1(); f2(); f3() }
-static func chain(...callables: Array) -> Callable:           return chainv(Array(callables, TYPE_CALLABLE, "", null))
-static func chainv(callables: Array[Callable]) -> Callable:   return Callable() if callables.is_empty() else Operator.chainv.bind(callables)
+static func chain(...callables: Array) -> Callable:               return chainv(Array(callables, TYPE_CALLABLE, "", null))
+static func chainv(callables: Array[Callable]) -> Callable:       return Callable() if callables.is_empty() else Operator.chainv.bind(callables)
 
 
 ## (f1, f2, f3) => { f1(f2(f3)) }
@@ -69,8 +72,8 @@ static func pipev(callables: Array[Callable]) -> Callable:
 
 
 ## nodes.filter(Bound.all(is_instance_of.bind(Node), Bound.has_property("my_property")))
-static func all(...predicates: Array) -> Callable:         return Operator.allv_custom.bind(predicates)
+static func all(...predicates: Array) -> Callable:         return Operator.allv_custom.bind(Array(predicates, TYPE_CALLABLE, "", null))
 static func allv(predicates: Array[Callable]) -> Callable: return Operator.allv_custom.bind(predicates)
 
-static func any(...predicates: Array) -> Callable:         return Operator.anyv_custom.bind(predicates)
+static func any(...predicates: Array) -> Callable:         return Operator.anyv_custom.bind(Array(predicates, TYPE_CALLABLE, "", null))
 static func anyv(predicates: Array[Callable]) -> Callable: return Operator.anyv_custom.bind(predicates)
