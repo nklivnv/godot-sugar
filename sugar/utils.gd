@@ -780,29 +780,23 @@ static func do_while(callable: Callable, predicate: Callable, max_repeats: int =
 	
 	return default
 
-
-static func for_each(array: Array, callable: Callable, ...args: Array) -> void:
+static func for_each(array: Array, callable: Callable) -> void:
 	for item: Variant in array:
-		callable.callv([item] + args)
+		callable.call(item)
 
+static func for_each_if(array: Array, predicate: Callable, callable: Callable) -> void:
+	for item: Variant in array:
+		if predicate.call(item): callable.call(item)
 
 static func call_each(array: Array, method: StringName, ...args: Array) -> void: callv_each(array, method, args)
 static func callv_each(array: Array, method: StringName, args: Array = []) -> void:
 	for item: Variant in array:
 		if item is Object and item.has_method(method): item.callv(method, args)
 
-
-static func for_each_if(array: Array,  callable: Callable, predicate: Callable) -> void: filtered_for(array, predicate, callable)
-static func filtered_for(array: Array, predicate: Callable, callable: Callable) -> void:
-	for item: Variant in array:
-		if predicate.call(item): callable.call(item)
-
-
-static func filtered_call(array: Array, predicate: Callable, method: StringName, ...method_args: Array) -> void: filtered_callv(array, predicate, method, method_args)
-static func filtered_callv(array: Array, predicate: Callable, method: StringName, method_args: Array = []) -> void:
+static func call_each_if(array: Array, predicate: Callable, method: StringName, ...args: Array) -> void: callv_each_if(array, predicate, method, args)
+static func callv_each_if(array: Array, predicate: Callable, method: StringName, args: Array = []) -> void:
 	for item in array:
-		if item is Object and item.has_method(method) and predicate.call(item): item.callv(method, method_args)
-
+		if item is Object and item.has_method(method) and predicate.call(item): item.callv(method, args)
 
 
 #endregion Iteration ###########################################################

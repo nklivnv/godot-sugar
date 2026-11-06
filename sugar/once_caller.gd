@@ -4,11 +4,17 @@
 static var _queue: Dictionary[Callable, bool]
 
 
-static func call_deferred_once(callable: Callable) -> void:
-	if callable in _queue: return
+static func _call_queue_and_clear() -> void:
+	var batch := _queue
+	_queue = {}
+	for callable: Callable in batch:
+		callable.call()
+
+
+static func call_deferred_once(callable: Callable, replace: bool = false) -> void:
+	if not replace and callable in _queue: return
+	if not _queue: _call_queue_and_clear.call_deferred()
 	_queue[callable] = true
-	callable.call_deferred()
-	erase.call_deferred(callable)
 
 
 static func erase(callable: Callable) -> void: _queue.erase(callable)
