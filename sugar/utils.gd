@@ -205,19 +205,43 @@ static func format_usec(usec: float, decimals: int = 3) -> String:
 static func get_class_property_names(type: StringName, no_inheritance: bool = false, usage: PropertyUsageFlags = PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_SCRIPT_VARIABLE) -> PackedStringArray:
 	return ClassDB.class_get_property_list(type, no_inheritance) \
 		.filter(func(p: Dictionary) -> bool: return p.usage & usage) \
-		.map(Bound.bound_get("name"))
+		.map(Operator.static_get.bind("name"))
 
 
 static func get_object_property_names(object: Object, usage: PropertyUsageFlags = PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_SCRIPT_VARIABLE) -> PackedStringArray:
 	return [] if not object else object.get_property_list() \
 		.filter(func(p: Dictionary) -> bool: return p.usage & usage) \
-		.map(Bound.bound_get("name"))
+		.map(Operator.static_get.bind("name"))
 
 
 static func get_object_method_names(object: Object, flags: MethodFlags = MethodFlags.METHOD_FLAGS_DEFAULT) -> PackedStringArray:
 	return [] if not object else object.get_method_list() \
 		.filter(func(d: Dictionary) -> bool: return d.flags & flags) \
-		.map(Bound.bound_get("name"))
+		.map(Operator.static_get.bind("name"))
+
+
+func get_common_property_list(a: Object, b: Object, types: bool = true, hints: bool = false, hint_strings: bool = false, usages: bool = false) -> Array[Dictionary]:
+	var result: Array[Dictionary]
+	
+	var b_properties_by_name: Dictionary
+	
+	for b_property: Dictionary in b.get_property_list():
+		b_properties_by_name[b_property.name] = b_property
+	
+	for a_property: Dictionary in a.get_property_list():
+		
+		if a_property.name not in b_properties_by_name: continue
+		
+		var b_property: Dictionary = b_properties_by_name[a_property.name]
+		
+		if types        and a_property.type        != b_property.type:        continue
+		if hints        and a_property.hint        != b_property.hint:        continue
+		if hint_strings and a_property.hint_string != b_property.hint_string: continue
+		if usages       and a_property.usage       != b_property.usage:       continue
+		
+		result.append(a_property)
+	
+	return result
 
 
 static func transact(
@@ -238,16 +262,16 @@ static func transact(
 	var allowed_delta_by_from: float = 0.0
 	if take_factor > 0.0:
 		allowed_delta_by_from = maxf(0.0, from_value - from_min) / take_factor
-		
+	
 	var allowed_delta_by_to: float = 0.0
 	if give_factor > 0.0:
 		allowed_delta_by_to = maxf(0.0, to_max - to_value) / give_factor
-
+	
 	var actual_delta: float = minf(delta, allowed_delta_by_from)
 	actual_delta = minf(actual_delta, allowed_delta_by_to)
 	
 	if actual_delta <= 0.0: return
-
+	
 	var taken: float = actual_delta * take_factor
 	var given: float = actual_delta * give_factor
 	

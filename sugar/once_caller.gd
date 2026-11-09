@@ -8,8 +8,7 @@ static func _call_queue_and_clear() -> void:
 	var batch := _queue
 	_queue = {}
 	for callable: Callable in batch:
-		if callable.is_valid():
-			callable.call()
+		callable.call()
 
 
 static func call_deferred_once(callable: Callable, replace: bool = false) -> void:
