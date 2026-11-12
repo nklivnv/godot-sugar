@@ -5,7 +5,7 @@ static var _queue: Dictionary[Callable, bool]
 
 
 static func _call_queue_and_clear() -> void:
-	var batch := _queue
+	var batch: Dictionary[Callable, bool] = _queue
 	_queue = {}
 	for callable: Callable in batch:
 		if callable.is_valid():

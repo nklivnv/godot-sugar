@@ -22,8 +22,8 @@ static func safe_call(method: StringName, ...args: Array) -> Callable:     retur
 static func safe_callv(method: StringName, args: Array = []) -> Callable:  return lbind(Operator.safe_callv, method, args)# func(object: Object) -> Variant: return Operator.safe_callerv(object, method, args)
 
 
-static func getter(container: Variant, key: Variant) -> Callable: return Operator.static_get.bind(container, key)
-static func setter(container: Variant, key: Variant) -> Callable: return func(value: Variant) -> void: container.set(key, value)
+static func getter(owner: Variant, key: Variant) -> Callable: return Operator.static_get.bind(owner, key)
+static func setter(owner: Variant, key: Variant) -> Callable: return func(value: Variant) -> void: owner.set(key, value)
 
 static func bound_get(key: Variant) -> Callable:                  return Operator.static_get.bind(key)
 static func bound_set(key: Variant, value: Variant) -> Callable:  return Operator.static_set.bind(key, value)

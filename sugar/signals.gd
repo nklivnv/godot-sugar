@@ -9,7 +9,7 @@ static func connect_object(object: Object, signal_name: StringName, callback: Ca
 		object.connect(signal_name, callback, flags)
 
 static func disconnect_object(object: Object, signal_name: StringName, callback: Callable) -> void:
-	if object and object.has_signal(signal_name) and  object.is_connected(signal_name, callback):
+	if object and object.has_signal(signal_name) and object.is_connected(signal_name, callback):
 		object.disconnect(signal_name, callback)
 
 static func reconnect_object(object: Object, signal_name: StringName, callback: Callable, flags: ConnectFlags = 0) -> void:
@@ -25,7 +25,7 @@ static func update_object(object: Object, signal_name: StringName, callback: Cal
 
 
 
-# --- Object Arrays: ---
+# --- Arrays of objects: ---
 
 static func connect_objects(objects: Array, signal_name: StringName, callback: Callable, flags: ConnectFlags = 0) -> void:
 	for object: Object in objects: connect_object(object, signal_name, callback, flags)
@@ -60,11 +60,17 @@ static func update_signal(signal_: Signal, callback: Callable, active: bool, fla
 
 
 
-# --- Until: ---
+# --- Other: ---
 
+## call_once_on
+static func call_on_signal(callable: Callable, call_signal: Signal) -> void:
+	connect_signal(call_signal, callable, CONNECT_ONE_SHOT)
+
+
+## call_on_signal_while, emit_until
 static func connect_signal_until(connection_signal: Signal, callback: Callable, disconnection_signal: Signal, flags: ConnectFlags = 0) -> void:
 	connection_signal.connect(callback, flags)
-	disconnection_signal.connect(connection_signal.disconnect.bind(callback), CONNECT_ONE_SHOT)
+	disconnection_signal.connect(disconnect_signal.bind(connection_signal, callback), CONNECT_ONE_SHOT)
 
 
 #class Connection:

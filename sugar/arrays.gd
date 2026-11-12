@@ -370,6 +370,10 @@ static func find_custom_wrapped(array: Array, predicate: Callable, from: int = 0
 	return found_index
 
 
+#static func find_converted(array: Array, converter: Callable, comparator: Callable) -> int:
+#	return find_index(array.map(converter), comparator)
+
+
 static func find_first(array: Array, predicate: Callable, from: int = 0, default: Variant = null) -> Variant:
 	var index: int = array.find_custom(predicate, from)
 	return array[index] if index >= 0 else default
@@ -390,22 +394,31 @@ static func find_first_custom(array: Array, converter: Callable, predicate: Call
 	return default
 
 
-## ([0, -1, 40, 3], max) => 40
-static func find_best(array: Array, comparator: Callable) -> Variant:
-	var index: int = find_index(array, comparator)
+## ([0, -1, 40, 3], Operator.is_greater) => 40
+static func find_best_value(array: Array, comparator: Callable) -> Variant:
+	var index: int = find_best_index(array, comparator)
 	return array[index] if index >= 0 else null
 
 
-## ([$Nearest, $Farthest], func(node: Node3D) -> float: return global_position.get_distance_to(node.global_position), min) -> $Nearest
-static func find_best_by(array: Array, converter: Callable, comparator: Callable) -> Variant:
-	var index: int = find_index(array.map(converter), comparator)
+## ([$Nearest, $Farthest],
+##  func(node: Node3D) -> float: return global_position.distance_squared_to(node.global_position),
+##  Operator.is_less) => $Nearest
+static func find_best_value_mapped(array: Array, converter: Callable, comparator: Callable) -> Variant:
+	var index: int = find_best_index(array.map(converter), comparator)
 	return array[index] if index >= 0 else null
+
+
+## ([0, -1, 40, 3], Operator.is_greater) => 2
+static func find_best_index(array: Array, comparator: Callable) -> int:
+	return -1 if not array else range(1, len(array)).reduce(
+		func(best: int, i: int) -> int: return i if comparator.call(array[i], array[best]) else best, 0)
 
 
 ## ([0, -1, 40, 3], max) => 2
-static func find_index(array: Array, comparator: Callable) -> int:
-	return -1 if not array else range(1, len(array)).reduce(
-		func(best: int, i: int) -> int: return i if comparator.call(array[i], array[best]) else best, 0)
+static func find_best_index_selected(array: Array, selector: Callable) -> int:
+	return -1 if array.is_empty() else range(1, len(array)).reduce(
+		func(best_index: int, i: int) -> int:
+			return i if array[i] != array[best_index] and selector.call(array[i], array[best_index]) == array[i] else best_index, 0)
 
 
 static func choose_first(values: Array[Variant], conditions: Array[Callable], default: Variant = null) -> Variant:
@@ -416,9 +429,6 @@ static func choose_first(values: Array[Variant], conditions: Array[Callable], de
 static func choose_first_valid(values: Array[Variant], predicates: Array[Callable], default: Variant = null) -> Variant:
 	var value_index: int = range(len(values)).find_custom(func(i: int) -> bool: return predicates[i].call(values[i]))
 	return values[value_index] if value_index != -1 else default
-
-
-
 
 
 static func take_while(array: Array, predicate: Callable, deep: bool = false) -> Array:

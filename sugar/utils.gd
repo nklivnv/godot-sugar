@@ -428,6 +428,11 @@ static func create_children(parent: Node, children_data: Array) -> void:
 #region ########################################################################
 
 
+static func initialized(object: Object, values: Dictionary[StringName, Variant]) -> Object:
+	for property: StringName in values: object.set(property, values[property])
+	return object
+
+
 static func default(value: Variant, default_value: Variant = null, invalid_value: Variant = null) -> Variant:
 	return default_value if is_same(value, invalid_value) else value
 
@@ -547,16 +552,16 @@ func schlick_bias(x: float, curvature: float) -> float:
 ## ((0,1,2), (2,1,0), min) => (0,1,0)
 #static func zip_3d(a: Vector3, b: Vector3, comparator: Callable) -> Vector3:
 #	return Vector3(comparator.call(a.x, b.x), comparator.call(a.y, b.y), comparator.call(a.z, b.z))
-static func zip_3d(comparator: Callable, ...vectors: Array) -> Vector3: return zipv_3d(comparator, vectors)
-static func zipv_3d(comparator: Callable, vectors: Array[Vector3]) -> Vector3:
+static func zip_3d(callable: Callable, ...vectors: Array) -> Vector3: return zipv_3d(callable, vectors)
+static func zipv_3d(callable: Callable, vectors: Array[Vector3]) -> Vector3:
 	return Vector3(
-		comparator.call(vectors.map(func(v): return v.x)),
-		comparator.call(vectors.map(func(v): return v.y)),
-		comparator.call(vectors.map(func(v): return v.z))
+		callable.call(vectors.map(func(v): return v.x)),
+		callable.call(vectors.map(func(v): return v.y)),
+		callable.call(vectors.map(func(v): return v.z))
 	)
 
 
-static func vector3_wrap(value: Vector3, min_value: Vector3, max_value: Vector3) -> Vector3:
+static func vector3_wrapc(value: Vector3, min_value: Vector3, max_value: Vector3) -> Vector3:
 	return Vector3(
 		wrapf(value.x, min_value.x, max_value.x),
 		wrapf(value.y, min_value.y, max_value.y),
